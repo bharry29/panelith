@@ -84,7 +84,7 @@ internal static class YouTubePrompt
             {
                 status.Text = await YouTubeDownloader.UpdateAsync(CancellationToken.None);
             }
-            catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+            catch (Exception ex)
             {
                 status.Text = ex.Message;
             }
@@ -140,8 +140,10 @@ internal static class YouTubePrompt
             {
                 status.Text = "Cancelled.";
             }
-            catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or TimeoutException or ArgumentException or System.ComponentModel.Win32Exception)
+            catch (Exception ex)
             {
+                // A download has many ways to fail, and the dialog is the only
+                // place that can say so; it must not become a crash.
                 status.Text = ex.Message;
                 update.IsVisible = !WindowsIntegration.IsElevated;
             }

@@ -367,6 +367,13 @@ public sealed partial class ScreensViewModel : ObservableObject, IDisposable
         {
             card.Dispose();
         }
+
+        foreach (var card in _retired)
+        {
+            card.Dispose();
+        }
+
+        _retired.Clear();
     }
 
     internal void OnRotationMembershipChanged()

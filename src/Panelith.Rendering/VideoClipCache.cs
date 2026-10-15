@@ -54,7 +54,7 @@ internal sealed class VideoClipCache : IDisposable
             catch (Exception ex) when (ex is InvalidDataException or IOException)
             {
                 _logger?.LogWarning("Clip '{Path}' frame {Index} could not be decoded ({Reason}).", relativePath, index, ex.Message);
-                playback.Index = index;
+                playback.Failed(index);
             }
         }
 
@@ -105,7 +105,7 @@ internal sealed class VideoClipCache : IDisposable
         public SKBitmap Bitmap { get; } = new(new SKImageInfo(
             reader.Info.Width, reader.Info.Height, SKColorType.Rgba8888, SKAlphaType.Unpremul));
 
-        public int Index { get; set; } = -1;
+        public int Index { get; private set; } = -1;
 
         public bool HasFrame { get; private set; }
 
@@ -134,6 +134,17 @@ internal sealed class VideoClipCache : IDisposable
             Bitmap.NotifyPixelsChanged();
             Index = index;
             HasFrame = true;
+        }
+
+        /// <summary>
+        /// Notes that a frame could not be decoded. The frame before it is let
+        /// go of, so a clip that has stopped playing shows as missing rather
+        /// than holding the last good picture for ever.
+        /// </summary>
+        public void Failed(int index)
+        {
+            Index = index;
+            HasFrame = false;
         }
 
         public void Dispose()

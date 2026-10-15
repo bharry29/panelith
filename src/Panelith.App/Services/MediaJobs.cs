@@ -225,7 +225,10 @@ public static class MediaJobs
         }
 
         using var process = Process.Start(start) ?? throw new InvalidOperationException("The video helper did not start.");
-        _ = process.StandardError.ReadToEndAsync(CancellationToken.None);
+
+        // Read what the child says on stderr as it says it, so a full pipe
+        // cannot wedge it, and keep it for the message if the job fails.
+        var errorOutput = process.StandardError.ReadToEndAsync(CancellationToken.None);
         await using var stop = cancellationToken.Register(() =>
         {
             try
@@ -281,10 +284,20 @@ public static class MediaJobs
         cancellationToken.ThrowIfCancellationRequested();
         if (result is null)
         {
-            throw new InvalidDataException(error ?? $"The video helper stopped unexpectedly (exit code {(process.HasExited ? process.ExitCode : -1)}).");
+            throw new InvalidDataException(error ?? Unexplained(process, errorOutput));
         }
 
         return result;
+    }
+
+    /// <summary>What to say when the helper stopped without reporting why.</summary>
+    private static string Unexplained(Process process, Task<string> errorOutput)
+    {
+        var code = process.HasExited ? process.ExitCode : -1;
+        var said = errorOutput.IsCompletedSuccessfully ? errorOutput.Result.ReplaceLineEndings(" ").Trim() : string.Empty;
+        return said.Length > 0
+            ? $"The video helper stopped unexpectedly (exit code {code.ToString(C)}): {said[..Math.Min(said.Length, 300)]}"
+            : $"The video helper stopped unexpectedly (exit code {code.ToString(C)}).";
     }
 
     private static void TryDelete(string path)

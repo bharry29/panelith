@@ -121,8 +121,6 @@ public static class ImageBaker
         var jpeg = FrameScaler.Encode(scaler.Scale(picture), quality);
         var target = Path.GetFullPath(output);
         Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-        var partial = target + ".partial";
-        File.WriteAllBytes(partial, jpeg);
-        File.Move(partial, target, overwrite: true);
+        AtomicFile.Write(target, jpeg);
     }
 }

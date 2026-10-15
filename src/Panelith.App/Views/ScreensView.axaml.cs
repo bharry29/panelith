@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Microsoft.Extensions.Logging;
 using Panelith.App.Services;
 using Panelith.App.ViewModels;
 
@@ -8,6 +9,8 @@ namespace Panelith.App.Views;
 
 public sealed partial class ScreensView : UserControl
 {
+    private bool _dialogOpen;
+
     public ScreensView() => InitializeComponent();
 
     private void OpenFolder(object? sender, RoutedEventArgs e)
@@ -32,9 +35,9 @@ public sealed partial class ScreensView : UserControl
         }
     }
 
-    private async void NewVideoScreen(object? sender, RoutedEventArgs e)
+    private async void NewVideoScreen(object? sender, RoutedEventArgs e) => await RunAsync(async screens =>
     {
-        if (DataContext is not ScreensViewModel screens || !OperatingSystem.IsWindows())
+        if (!OperatingSystem.IsWindows())
         {
             return;
         }
@@ -45,16 +48,16 @@ public sealed partial class ScreensView : UserControl
         {
             screens.ShowNew(id);
         }
-    }
+    });
 
-    private async void NewYouTubeScreen(object? sender, RoutedEventArgs e)
+    private async void NewYouTubeScreen(object? sender, RoutedEventArgs e) => await RunAsync(async screens =>
     {
-        if (DataContext is not ScreensViewModel screens || !OperatingSystem.IsWindows() || TopLevel.GetTopLevel(this) is not Window owner)
+        if (!OperatingSystem.IsWindows() || TopLevel.GetTopLevel(this) is not Window owner)
         {
             return;
         }
 
-        var folder = Path.Combine(Path.GetTempPath(), "Panelith", "download-" + Guid.NewGuid().ToString("N"));
+        var folder = MediaFolders.NewWorkFolder("download");
         try
         {
             if (await YouTubePrompt.AskAsync(owner, screens.Service.Runtime.Paths, folder) is { } download
@@ -72,41 +75,78 @@ public sealed partial class ScreensView : UserControl
                     Directory.Delete(folder, recursive: true);
                 }
             }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
             }
         }
-    }
+    });
 
     private async void SetWallpaper(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is not ScreensViewModel screens || (sender as Control)?.Tag is not ScreenCardViewModel card || !OperatingSystem.IsWindows())
+        var card = (sender as Control)?.Tag as ScreenCardViewModel;
+        await RunAsync(async screens =>
         {
-            return;
-        }
+            if (card is null || !OperatingSystem.IsWindows())
+            {
+                return;
+            }
 
-        var file = await PickAsync(
-            $"Choose a picture or video for {card.Name}",
-            new FilePickerFileType("Pictures and videos") { Patterns = [.. MediaImportViewModel.PicturePatterns, .. MediaImportViewModel.VideoPatterns] },
-            new FilePickerFileType("Pictures") { Patterns = MediaImportViewModel.PicturePatterns },
-            new FilePickerFileType("Videos") { Patterns = MediaImportViewModel.VideoPatterns });
-        if (file is not null && TopLevel.GetTopLevel(this) is Window owner
-            && await MediaImportWindow.ShowAsync(owner, new MediaImportViewModel(screens.Service, file, card.Id)) is { } id)
-        {
-            screens.ShowNew(id);
-        }
+            var file = await PickAsync(
+                $"Choose a picture or video for {card.Name}",
+                new FilePickerFileType("Pictures and videos") { Patterns = [.. MediaImportViewModel.PicturePatterns, .. MediaImportViewModel.VideoPatterns] },
+                new FilePickerFileType("Pictures") { Patterns = MediaImportViewModel.PicturePatterns },
+                new FilePickerFileType("Videos") { Patterns = MediaImportViewModel.VideoPatterns });
+            if (file is not null && TopLevel.GetTopLevel(this) is Window owner
+                && await MediaImportWindow.ShowAsync(owner, new MediaImportViewModel(screens.Service, file, card.Id)) is { } id)
+            {
+                screens.ShowNew(id);
+            }
+        });
     }
 
     private async void DeleteScreen(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is ScreensViewModel screens && (sender as Control)?.Tag is ScreenCardViewModel card
-            && await ConfirmPrompt.AskAsync(TopLevel.GetTopLevel(this) as Window, $"Delete {card.Name}?", "The screen and its pictures and videos are removed from your screens folder. This cannot be undone.", "Delete")
-            && !await screens.DeleteAsync(card))
+        var card = (sender as Control)?.Tag as ScreenCardViewModel;
+        await RunAsync(async screens =>
         {
-            await ConfirmPrompt.AskAsync(TopLevel.GetTopLevel(this) as Window, $"{card.Name} could not be deleted", "One of its files is still in use. Try again in a moment.", "OK");
+            if (card is null)
+            {
+                return;
+            }
+
+            var owner = TopLevel.GetTopLevel(this) as Window;
+            if (await ConfirmPrompt.AskAsync(owner, $"Delete {card.Name}?", "The screen and its pictures and videos are removed from your screens folder. This cannot be undone.", "Delete")
+                && !await screens.DeleteAsync(card))
+            {
+                await ConfirmPrompt.AskAsync(owner, $"{card.Name} could not be deleted", "One of its files is still in use. Try again in a moment.", "OK");
+            }
+        });
+    }
+
+    /// <summary>
+    /// Runs one of the buttons that opens a window. Only one runs at a time, so
+    /// a double click cannot start two imports, and a failure is written to the
+    /// log instead of reaching the app's last-resort error handler.
+    /// </summary>
+    private async Task RunAsync(Func<ScreensViewModel, Task> action)
+    {
+        if (_dialogOpen || DataContext is not ScreensViewModel screens)
+        {
+            return;
+        }
+
+        _dialogOpen = true;
+        try
+        {
+            await action(screens);
+        }
+        catch (Exception ex)
+        {
+            screens.Service.Log.CreateLogger("Panelith.App.Screens").LogError(ex, "That did not work: {Error}", ex.Message);
+        }
+        finally
+        {
+            _dialogOpen = false;
         }
     }
 

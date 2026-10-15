@@ -74,7 +74,7 @@
             <DockPanel>
               <Button DockPanel.Dock="Right" Classes="ghost small" Content="Fit to the whole picture" Command="{Binding ResetCropCommand}" />
               <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" IsVisible="{Binding IsVideo}">
-                <Button Classes="ghost icon" Command="{Binding TogglePlayCommand}" ToolTip.Tip="{Binding PlayTip}" Width="34" Height="34">
+                <Button Classes="ghost icon" Command="{Binding TogglePlayCommand}" ToolTip.Tip="{Binding PlayTip}" AutomationProperties.Name="{Binding PlayTip}" Width="34" Height="34">
                   <PathIcon Data="{Binding PlayIcon}" Width="14" Height="14" />
                 </Button>
                 <TextBlock Text="{Binding PlayheadText}" Classes="mono" VerticalAlignment="Center" />

@@ -300,6 +300,37 @@ public sealed class VideoBakerTests : IDisposable
     }
 
     [Fact]
+    public void SeekingBackToTheStartPlaysTheStartAgain()
+    {
+        Assert.SkipUnless(File.Exists(_video), "Media Foundation is not available.");
+        using var decoder = MediaFoundationDecoder.Open(_video);
+        using var bitmap = new SKBitmap(new SKImageInfo(decoder.Width, decoder.Height, SKColorType.Bgra8888, SKAlphaType.Opaque));
+
+        // Seeking lands on the key frame before the target, so read forward to it.
+        decoder.Seek(TimeSpan.FromSeconds(2.5));
+        while (decoder.Next() is { } frame)
+        {
+            using (frame)
+            {
+                if (frame.Timestamp >= TimeSpan.FromSeconds(2.5))
+                {
+                    frame.CopyTo(bitmap);
+                    break;
+                }
+            }
+        }
+
+        AssertMostly(SKColors.Blue, bitmap.GetPixel(bitmap.Width / 2, bitmap.Height / 2));
+
+        decoder.Seek(TimeSpan.Zero);
+        using var first = decoder.Next();
+
+        Assert.NotNull(first);
+        first.CopyTo(bitmap);
+        AssertMostly(SKColors.Red, bitmap.GetPixel(bitmap.Width / 2, bitmap.Height / 2));
+    }
+
+    [Fact]
     public void AFileThatIsNotAVideoIsReportedClearly()
     {
         Assert.SkipUnless(File.Exists(_video), "Media Foundation is not available.");

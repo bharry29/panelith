@@ -198,7 +198,7 @@ public sealed partial class DashboardViewModel : ObservableObject, IDisposable
                 var theme = _service.Library.Load(themeId);
                 _preview = new ThemeRenderer(theme, new ThemeRenderOptions(size.Item1, size.Item2, ShowErrorMarkers: true, ThemeFolder: theme.BasePath));
             }
-            catch (Exception ex) when (ex is FileNotFoundException or ThemeFormatException)
+            catch (Exception ex)
             {
                 MirrorCaption = $"The screen \"{themeId}\" could not be loaded: {ex.Message}";
                 return;

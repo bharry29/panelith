@@ -50,7 +50,7 @@ public static class VideoProbe
             var jpeg = FrameScaler.Encode(scaler.Scale(chosen), 85);
             var target = Path.GetFullPath(previewJpeg);
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.WriteAllBytes(target, jpeg);
+            AtomicFile.Write(target, jpeg);
         }
         finally
         {

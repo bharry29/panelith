@@ -97,6 +97,7 @@ public sealed partial class App : Application
         try
         {
             _log!.CreateLogger("Panelith.App").LogInformation("Starting on the UI thread: {OnUi}", Dispatcher.UIThread.CheckAccess());
+            MediaFolders.ClearLeftovers();
             var service = await PanelithService.StartAsync(_log!, settings.DemoSensors);
 
             // Start-up runs before Avalonia installs its synchronisation context,
@@ -279,18 +280,20 @@ public sealed partial class App : Application
         }
 
         _offeredRestart = true;
-        var restart = await RecoveryPrompt.AskAsync(_window is { IsVisible: true } ? _window : null);
-        if (restart && Environment.ProcessPath is { } exe)
+        try
         {
-            try
+            var restart = await RecoveryPrompt.AskAsync(_window is { IsVisible: true } ? _window : null);
+            if (restart && Environment.ProcessPath is { } exe)
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe, WindowsIntegration.RestartArgument) { UseShellExecute = false });
                 await QuitAsync();
             }
-            catch (System.ComponentModel.Win32Exception ex)
-            {
-                _log?.CreateLogger("Panelith.App").LogWarning("Panelith could not restart itself: {Message}", ex.Message);
-            }
+        }
+        catch (Exception ex)
+        {
+            // This runs because something already went wrong; it cannot be
+            // allowed to go wrong again on the way out.
+            _log?.CreateLogger("Panelith.App").LogWarning("Panelith could not restart itself: {Message}", ex.Message);
         }
     }
 

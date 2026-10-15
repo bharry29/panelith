@@ -69,7 +69,7 @@ public static class VideoFrames
                 }
 
                 var path = Path.Combine(folder, $"strip-{i:00}.jpg");
-                Write(path, FrameScaler.Encode(scaler.Scale(chosen), Quality));
+                AtomicFile.Write(path, FrameScaler.Encode(scaler.Scale(chosen), Quality));
                 onFrame?.Invoke(new ExtractedFrame(i, at, path));
                 written++;
             }
@@ -115,7 +115,7 @@ public static class VideoFrames
                 cancellationToken.ThrowIfCancellationRequested();
                 jpeg ??= FrameScaler.Encode(scaler.Scale(held), Quality);
                 var path = Path.Combine(folder, $"f{next:00000}.jpg");
-                Write(path, jpeg);
+                AtomicFile.Write(path, jpeg);
                 onFrame?.Invoke(new ExtractedFrame(next, Target(next), path));
                 next++;
             }
@@ -158,12 +158,5 @@ public static class VideoFrames
         }
 
         return next;
-    }
-
-    private static void Write(string path, byte[] jpeg)
-    {
-        var partial = path + ".partial";
-        File.WriteAllBytes(partial, jpeg);
-        File.Move(partial, path, overwrite: true);
     }
 }

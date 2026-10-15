@@ -36,21 +36,24 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
     private static readonly TimeSpan RangeDelay = TimeSpan.FromMilliseconds(400);
     private const int FilmstripCount = 24;
 
+    /// <summary>How many played pictures to keep before letting go of them.</summary>
+    private const int RetainedFrames = 3;
+
     private readonly PanelithService _service;
     private readonly ScreenWorkshop _workshop;
     private readonly ILogger _logger;
     private readonly string? _wallpaperFor;
-    private readonly string _previewFolder = Path.Combine(Path.GetTempPath(), "Panelith", "preview");
     private readonly object _renderGate = new();
     private CancellationTokenSource? _work;
-    private CancellationTokenSource? _previewDelay;
     private Made? _made;
     private ThemeRenderer? _renderer;
     private DispatcherTimer? _reviewTimer;
     private bool _rendering;
     private readonly string _session;
     private readonly List<ExtractedFrame> _frames = [];
+    private readonly Queue<Bitmap> _retired = new();
     private readonly DispatcherTimer _playTimer;
+    private readonly DispatcherTimer _rangeDelay;
     private CancellationTokenSource? _filmstripJob;
     private CancellationTokenSource? _rangeJob;
     private int _rangeCount;
@@ -74,8 +77,15 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         IsVideo = VideoPatterns.Any(p => source.EndsWith(p[1..], StringComparison.OrdinalIgnoreCase));
         Name = Path.GetFileNameWithoutExtension(source);
         Title = wallpaperFor is null ? "New video screen" : "Wallpaper";
-        _session = Path.Combine(_previewFolder, Guid.NewGuid().ToString("N"));
-        _playTimer = new DispatcherTimer(PlayInterval(), DispatcherPriority.Background, (_, _) => PlayTick());
+        _session = MediaFolders.NewWorkFolder("preview");
+        _playTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = PlayInterval() };
+        _playTimer.Tick += (_, _) => PlayTick();
+        _rangeDelay = new DispatcherTimer(DispatcherPriority.Background) { Interval = RangeDelay };
+        _rangeDelay.Tick += (_, _) =>
+        {
+            _rangeDelay.Stop();
+            StartRangePreview();
+        };
     }
 
     /// <summary>Pictures from across the video, for choosing the part to loop; null until each is ready.</summary>
@@ -246,7 +256,7 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
     {
         try
         {
-            Directory.CreateDirectory(_previewFolder);
+            Directory.CreateDirectory(_session);
             if (IsVideo)
             {
                 var probe = await ProbeAsync(TimeSpan.Zero, CancellationToken.None);
@@ -279,8 +289,11 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
                 _playTimer.Start();
             }
         }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
+        catch (Exception ex)
         {
+            // Decoding a picture or a video can fail in more ways than can be
+            // listed, including running out of memory on a huge one. None of
+            // them should take the app down.
             _logger.LogWarning("Could not open {File}: {Error}", Source, ex.Message);
             Problem = $"Panelith could not open this file. {ex.Message}";
             Status = string.Empty;
@@ -313,9 +326,9 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
     [RelayCommand(CanExecute = nameof(CanCreate))]
     private async Task CreateAsync()
     {
+        _rangeDelay.Stop();
         if (!_rangeDone)
         {
-            _previewDelay?.Cancel();
             _rangeJob?.Cancel();
         }
 
@@ -379,9 +392,9 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         {
             Status = "Cancelled.";
         }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
+        catch (Exception ex)
         {
-            _logger.LogWarning("Could not make a screen from {File}: {Error}", Source, ex.Message);
+            _logger.LogWarning(ex, "Could not make a screen from {File}: {Error}", Source, ex.Message);
             Problem = ex.Message;
             Status = string.Empty;
         }
@@ -456,6 +469,7 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
     {
         if (_work is { } work)
         {
+            Status = "Stopping...";
             work.Cancel();
             return;
         }
@@ -468,7 +482,7 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
     {
         _disposed = true;
         _work?.Cancel();
-        _previewDelay?.Cancel();
+        _rangeDelay.Stop();
         _playTimer.Stop();
         _filmstripJob?.Cancel();
         _rangeJob?.Cancel();
@@ -481,12 +495,15 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         var session = _session;
         _ = Task.Run(async () =>
         {
-            // The helpers stop within a moment of being cancelled; give them time to let go of their files.
+            // The helpers stop within a moment of being cancelled; give them
+            // time to let go of their files before taking them away.
             await Task.Delay(TimeSpan.FromSeconds(3));
             if (Directory.Exists(session))
             {
                 TryDeleteFolder(session);
             }
+
+            PreparedSource.Clear();
         });
         StopReview();
         if (_made is { } made)
@@ -503,22 +520,10 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
 
         ResultFrame.Dispose();
         Preview?.Dispose();
-        PreparedSource.Clear();
-        try
+        Preview = null;
+        while (_retired.Count > 0)
         {
-            if (Directory.Exists(_previewFolder))
-            {
-                foreach (var file in Directory.EnumerateFiles(_previewFolder, "*.jpg"))
-                {
-                    File.Delete(file);
-                }
-            }
-        }
-        catch (IOException)
-        {
-        }
-        catch (UnauthorizedAccessException)
-        {
+            _retired.Dequeue().Dispose();
         }
     }
 
@@ -545,19 +550,10 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
 
     private async Task<VideoProbeResult> ProbeAsync(TimeSpan at, CancellationToken cancellationToken)
     {
-        var jpeg = Path.Combine(_previewFolder, Guid.NewGuid().ToString("N") + ".jpg");
+        var jpeg = Path.Combine(_session, Guid.NewGuid().ToString("N") + ".jpg");
         var probe = await MediaJobs.ProbeAsync(Source, at, jpeg, cancellationToken);
-        var previous = Preview;
-        Preview = new Bitmap(jpeg);
-        previous?.Dispose();
-        try
-        {
-            File.Delete(jpeg);
-        }
-        catch (IOException)
-        {
-        }
-
+        Show(new Bitmap(jpeg));
+        TryDeleteFile(jpeg);
         return probe;
     }
 
@@ -574,7 +570,7 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         var work = _filmstripJob = new CancellationTokenSource();
         var frames = new Progress<ExtractedFrame>(f =>
         {
-            if (work.IsCancellationRequested || f.Index is < 0 or >= FilmstripCount)
+            if (_disposed || work.IsCancellationRequested || f.Index is < 0 or >= FilmstripCount || f.Index >= Thumbnails.Count)
             {
                 return;
             }
@@ -583,48 +579,56 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
             {
                 var previous = Thumbnails[f.Index];
                 Thumbnails[f.Index] = new Bitmap(f.Path);
-                previous?.Dispose();
+                if (previous is not null)
+                {
+                    _retired.Enqueue(previous);
+                }
             }
-            catch (Exception ex) when (ex is IOException or ArgumentException or InvalidOperationException)
+            catch (Exception ex)
             {
                 _logger.LogDebug("Filmstrip picture {Index} could not be shown: {Error}", f.Index, ex.Message);
             }
         });
 
+        // Nothing waits on this, so an unexpected error here must not reach the dispatcher.
         try
         {
             await MediaJobs.FilmstripAsync(Source, FilmstripCount, Path.Combine(_session, "strip"), frames, work.Token);
         }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or OperationCanceledException or InvalidOperationException)
+        catch (Exception ex)
         {
             _logger.LogDebug("The filmstrip stopped: {Error}", ex.Message);
         }
+        finally
+        {
+            if (ReferenceEquals(_filmstripJob, work))
+            {
+                _filmstripJob = null;
+            }
+
+            work.Dispose();
+        }
     }
 
+    /// <summary>Starts the preview again once the handles have been still for a moment.</summary>
     private void ScheduleRangePreview()
     {
-        if (!IsVideo || !IsLoaded)
+        if (!IsVideo || !IsLoaded || _disposed)
         {
             return;
         }
 
-        _previewDelay?.Cancel();
-        var delay = _previewDelay = new CancellationTokenSource();
-        _ = Task.Delay(RangeDelay, delay.Token).ContinueWith(
-            t =>
-            {
-                if (!t.IsCanceled && !_disposed)
-                {
-                    StartRangePreview();
-                }
-            },
-            CancellationToken.None,
-            TaskContinuationOptions.None,
-            TaskScheduler.FromCurrentSynchronizationContext());
+        _rangeDelay.Stop();
+        _rangeDelay.Start();
     }
 
     private async void StartRangePreview()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
         _rangeJob?.Cancel();
         var work = _rangeJob = new CancellationTokenSource();
         var folder = Path.Combine(_session, "range-" + (++_rangeCount).ToString(CultureInfo.InvariantCulture));
@@ -637,7 +641,7 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         PreviewProgressText = "Preparing the preview...";
         var frames = new Progress<ExtractedFrame>(f =>
         {
-            if (work.IsCancellationRequested)
+            if (_disposed || work.IsCancellationRequested)
             {
                 return;
             }
@@ -658,7 +662,7 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         catch (OperationCanceledException)
         {
         }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException)
+        catch (Exception ex)
         {
             _logger.LogDebug("The preview stopped: {Error}", ex.Message);
             if (!work.IsCancellationRequested)
@@ -673,6 +677,13 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
             {
                 _ = Task.Run(() => TryDeleteFolder(folder));
             }
+
+            if (ReferenceEquals(_rangeJob, work))
+            {
+                _rangeJob = null;
+            }
+
+            work.Dispose();
         }
     }
 
@@ -696,14 +707,32 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         var frame = _frames[_playIndex++];
         try
         {
-            var previous = Preview;
-            Preview = new Bitmap(frame.Path);
-            previous?.Dispose();
+            Show(new Bitmap(frame.Path));
             PlayheadSeconds = frame.Time.TotalSeconds;
         }
-        catch (Exception ex) when (ex is IOException or ArgumentException or InvalidOperationException)
+        catch (Exception ex)
         {
             _logger.LogDebug("Preview frame {Index} could not be shown: {Error}", frame.Index, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Shows a picture, letting go of the ones before it a few frames later.
+    /// The drawing thread can still be holding the picture it swapped out, so
+    /// disposing it straight away can tear a frame.
+    /// </summary>
+    private void Show(Bitmap bitmap)
+    {
+        var previous = Preview;
+        Preview = bitmap;
+        if (previous is not null)
+        {
+            _retired.Enqueue(previous);
+        }
+
+        while (_retired.Count > RetainedFrames)
+        {
+            _retired.Dequeue().Dispose();
         }
     }
 
@@ -782,9 +811,15 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
             t =>
             {
                 _rendering = false;
-                if (t.IsCompletedSuccessfully && t.Result is { } frame && IsReviewing)
+                if (t.IsCompletedSuccessfully && t.Result is { } frame)
                 {
-                    ResultFrame.Update(frame);
+                    using (frame)
+                    {
+                        if (IsReviewing)
+                        {
+                            ResultFrame.Update(frame);
+                        }
+                    }
                 }
                 else if (t.Exception is { } ex)
                 {

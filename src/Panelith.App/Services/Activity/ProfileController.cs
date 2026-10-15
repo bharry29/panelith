@@ -166,8 +166,10 @@ public sealed partial class ProfileController : ObservableObject, IDisposable
             _lastSnapshot = snapshot;
             Evaluate(snapshot);
         }
-        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or IOException)
+        catch (Exception ex)
         {
+            // Nothing waits on this tick, and stopping for good would leave
+            // profiles stuck on whichever one was last chosen.
             _logger.LogWarning("Could not check running programs: {Message}", ex.Message);
         }
         finally

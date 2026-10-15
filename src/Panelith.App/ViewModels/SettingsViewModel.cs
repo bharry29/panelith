@@ -321,9 +321,16 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     internal static void OpenFolder(string folder)
     {
-        Directory.CreateDirectory(folder);
-        var opener = OperatingSystem.IsWindows() ? "explorer.exe" : OperatingSystem.IsMacOS() ? "open" : "xdg-open";
-        Process.Start(new ProcessStartInfo(opener, $"\"{folder}\"") { UseShellExecute = false });
+        try
+        {
+            Directory.CreateDirectory(folder);
+            var opener = OperatingSystem.IsWindows() ? "explorer.exe" : OperatingSystem.IsMacOS() ? "open" : "xdg-open";
+            Process.Start(new ProcessStartInfo(opener, $"\"{folder}\"") { UseShellExecute = false });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            // Nothing opened; there is nowhere in these menus to say so.
+        }
     }
 
     private void MarkPanelChanged()

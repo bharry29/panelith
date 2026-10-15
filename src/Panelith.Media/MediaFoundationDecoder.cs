@@ -20,6 +20,7 @@ public sealed class MediaFoundationDecoder : IDisposable
 
     private readonly IMFSourceReader _reader;
     private Format _format;
+    private Format _nominal;
     private IMFSample? _pending;
     private bool _ended;
     private bool _disposed;
@@ -28,14 +29,15 @@ public sealed class MediaFoundationDecoder : IDisposable
     {
         _reader = reader;
         _format = format;
+        _nominal = format;
         Duration = duration;
     }
 
-    /// <summary>Picture width.</summary>
-    public int Width => _format.Width;
+    /// <summary>Picture width. Steady for the whole video, even if the stream changes size.</summary>
+    public int Width => _nominal.Width;
 
-    /// <summary>Picture height.</summary>
-    public int Height => _format.Height;
+    /// <summary>Picture height. Steady for the whole video, even if the stream changes size.</summary>
+    public int Height => _nominal.Height;
 
     /// <summary>Length of the video, when the file says.</summary>
     public TimeSpan? Duration { get; }
@@ -58,6 +60,7 @@ public sealed class MediaFoundationDecoder : IDisposable
 
         Startup();
         IMFSourceReader? reader = null;
+        var handedOver = false;
         try
         {
             using (var attributes = MediaFactory.MFCreateAttributes(1))
@@ -77,6 +80,10 @@ public sealed class MediaFoundationDecoder : IDisposable
 
             var decoder = new MediaFoundationDecoder(reader, ReadFormat(reader), ReadDuration(reader));
             reader = null;
+
+            // From here the decoder owns the Media Foundation session, and
+            // disposing it closes that session down.
+            handedOver = true;
             try
             {
                 decoder.Prime();
@@ -95,9 +102,9 @@ public sealed class MediaFoundationDecoder : IDisposable
         }
         finally
         {
-            if (reader is not null)
+            reader?.Dispose();
+            if (!handedOver)
             {
-                reader.Dispose();
                 Shutdown();
             }
         }
@@ -107,13 +114,10 @@ public sealed class MediaFoundationDecoder : IDisposable
     public void Seek(TimeSpan position)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (position > TimeSpan.Zero)
-        {
-            _pending?.Dispose();
-            _pending = null;
-            _ended = false;
-            _reader.SetCurrentPosition(position.Ticks);
-        }
+        _pending?.Dispose();
+        _pending = null;
+        _ended = false;
+        _reader.SetCurrentPosition(Math.Max(0L, position.Ticks));
     }
 
     /// <summary>The next picture, or null at the end of the video.</summary>
@@ -123,11 +127,11 @@ public sealed class MediaFoundationDecoder : IDisposable
         if (_pending is { } pending)
         {
             _pending = null;
-            return new Frame(pending, _format);
+            return new Frame(pending, _format, _nominal);
         }
 
-        var sample = _ended ? null : Read(allowResize: false);
-        return sample is null ? null : new Frame(sample, _format);
+        var sample = _ended ? null : Read();
+        return sample is null ? null : new Frame(sample, _format, _nominal);
     }
 
     /// <summary>
@@ -135,9 +139,13 @@ public sealed class MediaFoundationDecoder : IDisposable
     /// guess (H.264 rounds 1080 rows up to 1088); the decoder's first output
     /// says the real one, so the size is settled before anyone reads it.
     /// </summary>
-    private void Prime() => _pending = Read(allowResize: true);
+    private void Prime()
+    {
+        _pending = Read();
+        _nominal = _format;
+    }
 
-    private IMFSample? Read(bool allowResize)
+    private IMFSample? Read()
     {
         while (true)
         {
@@ -160,14 +168,7 @@ public sealed class MediaFoundationDecoder : IDisposable
 
             if ((flags & SourceReaderFlag.CurrentMediaTypeChanged) != 0)
             {
-                var format = ReadFormat(_reader);
-                if (!allowResize && (format.Width != Width || format.Height != Height))
-                {
-                    sample?.Dispose();
-                    throw new InvalidDataException($"The video changes size part way through, from {Width}x{Height} to {format.Width}x{format.Height}, which Panelith cannot bake.");
-                }
-
-                _format = format;
+                _format = ReadFormat(_reader);
             }
 
             if (sample is not null)
@@ -221,12 +222,18 @@ public sealed class MediaFoundationDecoder : IDisposable
                 return false;
             }
 
-            for (var i = 0; i < count; i++)
+            try
             {
-                Marshal.Release(Marshal.ReadIntPtr(activates, i * IntPtr.Size));
+                for (var i = 0; i < count; i++)
+                {
+                    Marshal.Release(Marshal.ReadIntPtr(activates, i * IntPtr.Size));
+                }
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(activates);
             }
 
-            Marshal.FreeCoTaskMem(activates);
             return count > 0;
         }
         catch (SharpGenException)
@@ -316,20 +323,45 @@ public sealed class MediaFoundationDecoder : IDisposable
         }
     }
 
-    private sealed class Frame(IMFSample sample, Format format) : IDecodedFrame
+    private sealed class Frame(IMFSample sample, Format format, Format nominal) : IDecodedFrame
     {
+        private static readonly SKSamplingOptions Sampling = new(SKFilterMode.Linear, SKMipmapMode.Linear);
+
         public TimeSpan Timestamp { get; } = TimeSpan.FromTicks(sample.SampleTime);
 
         public TimeSpan Duration { get; } = TimeSpan.FromTicks(Math.Max(0, sample.SampleDuration));
 
         public void CopyTo(SKBitmap destination)
         {
-            var (width, height) = (format.Width, format.Height);
-            if (destination.Width != width || destination.Height != height || destination.ColorType != SKColorType.Bgra8888)
+            ArgumentNullException.ThrowIfNull(destination);
+            if (destination.Width != nominal.Width || destination.Height != nominal.Height || destination.ColorType != SKColorType.Bgra8888)
             {
                 throw new ArgumentException("The bitmap does not match the video.", nameof(destination));
             }
 
+            if (format.Width == nominal.Width && format.Height == nominal.Height)
+            {
+                CopyRows(destination);
+                return;
+            }
+
+            // Some videos, YouTube's among them, switch resolution part way
+            // through. The picture still frames the same scene, so fit it to
+            // the size the rest of the video decoded at.
+            using var picture = new SKBitmap(new SKImageInfo(format.Width, format.Height, SKColorType.Bgra8888, SKAlphaType.Opaque));
+            CopyRows(picture);
+            picture.NotifyPixelsChanged();
+            using var image = SKImage.FromBitmap(picture);
+            using var canvas = new SKCanvas(destination);
+            canvas.DrawImage(image, new SKRect(0, 0, destination.Width, destination.Height), Sampling);
+            canvas.Flush();
+        }
+
+        public void Dispose() => sample.Dispose();
+
+        private void CopyRows(SKBitmap destination)
+        {
+            var (width, height) = (format.Width, format.Height);
             using var buffer = sample.ConvertToContiguousBuffer();
             buffer.Lock(out var data, out _, out var length);
             try
@@ -361,8 +393,6 @@ public sealed class MediaFoundationDecoder : IDisposable
                 buffer.Unlock();
             }
         }
-
-        public void Dispose() => sample.Dispose();
 
         // RGB32 leaves the alpha byte undefined; JPEG ignores it but Skia's blending does not.
         private static void MakeOpaque(Span<uint> pixels)

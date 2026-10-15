@@ -232,6 +232,22 @@ public sealed class PanelSupervisor : IAsyncDisposable
 
                 return;
             }
+            catch (Exception ex)
+            {
+                // Whatever else went wrong, the loop is over: say so, rather
+                // than leaving the panel looking as though it were running.
+                _logger.LogError(ex, "Driving {Panel} stopped unexpectedly.", _status.DisplayName);
+
+                Update(s => s with
+                {
+                    State = PanelRuntimeState.Failed,
+                    LastError = ex.Message,
+                    Remedy = "Restart Panelith. If it keeps happening, the log in the Settings tab has the detail.",
+                    FramesPerSecond = 0,
+                });
+
+                return;
+            }
         }
     }
 

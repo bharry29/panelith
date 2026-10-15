@@ -26,6 +26,52 @@ public static class MediaFolders
     /// <summary>The loops made into screens, as MP4s any player can open.</summary>
     public static string Screens => Path.Combine(Root, "Screens");
 
+    /// <summary>Where work in progress goes: previews, downloads being fetched, and copies made to decode.</summary>
+    public static string Work { get; } = Path.Combine(Path.GetTempPath(), "Panelith");
+
+    /// <summary>A folder under <see cref="Work"/> for one job, named after what it is for.</summary>
+    public static string NewWorkFolder(string purpose) =>
+        Path.Combine(Work, purpose, Guid.NewGuid().ToString("N"));
+
+    /// <summary>
+    /// Removes what a previous run left in <see cref="Work"/>. A download or a
+    /// preview can be hundreds of megabytes, and a run that ends in a crash or
+    /// a power cut cannot tidy up after itself. Only safe at start-up, before
+    /// anything in this run has started working.
+    /// </summary>
+    public static void ClearLeftovers()
+    {
+        try
+        {
+            if (!Directory.Exists(Work))
+            {
+                return;
+            }
+
+            foreach (var entry in Directory.EnumerateFileSystemEntries(Work))
+            {
+                try
+                {
+                    if (Directory.Exists(entry))
+                    {
+                        Directory.Delete(entry, recursive: true);
+                    }
+                    else
+                    {
+                        File.Delete(entry);
+                    }
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    // Something still has it open; it will go next time.
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+        }
+    }
+
     /// <summary>Turns <paramref name="name"/> into something Windows accepts as a file name, at most 100 characters.</summary>
     public static string SafeName(string? name)
     {

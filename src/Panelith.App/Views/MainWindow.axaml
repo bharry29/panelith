@@ -41,7 +41,8 @@
                     <TextBlock Text="{Binding ProfileReason}" Classes="faint" FontSize="11" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding ProfileReason}" />
                   </StackPanel>
                   <ToggleButton Grid.Column="2" Classes="pin" IsChecked="{Binding IsProfilePinned, Mode=OneWay}" Command="{Binding ToggleProfilePinCommand}"
-                                ToolTip.Tip="Pin this profile, or unpin to switch automatically">
+                                ToolTip.Tip="Pin this profile, or unpin to switch automatically"
+                                AutomationProperties.Name="Pin this profile">
                     <PathIcon Data="{x:Static vm:Icons.Pin}" Width="13" Height="13" />
                   </ToggleButton>
                 </Grid>

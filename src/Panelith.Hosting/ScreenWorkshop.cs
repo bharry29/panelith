@@ -256,8 +256,23 @@ public sealed class ScreenWorkshop
 
         var target = Path.Combine(full, ThemeSchema.FileName);
         var partial = target + ".partial";
-        File.WriteAllText(partial, ThemeSerializer.Serialize(theme), new UTF8Encoding(false));
-        File.Move(partial, target, overwrite: true);
+        try
+        {
+            File.WriteAllText(partial, ThemeSerializer.Serialize(theme), new UTF8Encoding(false));
+            File.Move(partial, target, overwrite: true);
+        }
+        catch
+        {
+            try
+            {
+                File.Delete(partial);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+
+            throw;
+        }
     }
 
     /// <summary>Deletes a screen from the user's folder.</summary>
