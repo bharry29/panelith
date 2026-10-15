@@ -1,0 +1,144 @@
+[
+  {
+    "id": "turing.smart-screen-3.5",
+    "vendor": "Turing",
+    "model": "Smart Screen 3.5\" (rev A)",
+    "aliases": ["Turing 3.5", "TURZX 3.5", "USB35INCHIPSV2"],
+    "driver": "turing.serial",
+    "usb": [{ "vendor": "0x1A86", "product": "0x5722", "serialNumber": "USB35INCHIPSV2" }],
+    "width": 320,
+    "height": 480,
+    "pixelFormat": "rgb565LittleEndian",
+    "transport": "serial",
+    "probe": "turingRevisionA",
+    "baudRate": 115200,
+    "capabilities": {
+      "supportsBrightness": true,
+      "supportsScreenPower": true,
+      "supportsPartialUpdate": true,
+      "supportsHardwareOrientation": true,
+      "maxFramesPerSecond": 2,
+      "requiresExclusiveAccess": true
+    },
+    "support": "untested",
+    "notes": "Full-screen updates run near 1 FPS because everything shares one serial link; partial updates are much faster, which RigGlass uses automatically. Known to need a reconnect after system sleep."
+  },
+  {
+    "id": "turing.usbmonitor",
+    "vendor": "UsbMonitor",
+    "model": "USB Monitor 3.5\" / 5\" / 7\" (rev A)",
+    "driver": "turing.serial",
+    "usb": [{ "vendor": "0x1A86", "product": "0x5722" }],
+    "width": 320,
+    "height": 480,
+    "pixelFormat": "rgb565LittleEndian",
+    "transport": "serial",
+    "probe": "turingRevisionA",
+    "baudRate": 115200,
+    "capabilities": {
+      "supportsBrightness": true,
+      "supportsScreenPower": true,
+      "supportsPartialUpdate": true,
+      "supportsHardwareOrientation": true,
+      "maxFramesPerSecond": 2
+    },
+    "support": "untested",
+    "notes": "Resolution is confirmed by the hello reply, so all three sizes share this profile. Matched without a serial number, so it is used for any CH340 panel that is not a more specific match."
+  },
+  {
+    "id": "xuanfang.3.5",
+    "vendor": "XuanFang",
+    "model": "3.5\" (rev B)",
+    "aliases": ["XuanFang flagship", "Turing rev B"],
+    "driver": "turing.serial",
+    "usb": [{ "vendor": "0x1A86", "product": "0x5722", "serialNumber": "2017-2-25" }],
+    "width": 320,
+    "height": 480,
+    "pixelFormat": "rgb565LittleEndian",
+    "transport": "serial",
+    "probe": "turingRevisionB",
+    "baudRate": 115200,
+    "capabilities": {
+      "supportsBrightness": true,
+      "supportsScreenPower": true,
+      "supportsPartialUpdate": true,
+      "supportsHardwareOrientation": true,
+      "maxFramesPerSecond": 3
+    },
+    "support": "untested",
+    "notes": "The hello reply reports a sub-revision; only the A11 and A12 variants can dim, the others switch the backlight on or off. A12 and A02 also have rear LEDs."
+  },
+  {
+    "id": "turing.5inch-rev-c",
+    "vendor": "Turing",
+    "model": "5\" (rev C)",
+    "driver": "turing.serial",
+    "usb": [{ "vendor": "0x1D6B", "product": "0x0106" }],
+    "width": 480,
+    "height": 800,
+    "pixelFormat": "bgr888",
+    "transport": "serial",
+    "probe": "turingRevisionC",
+    "baudRate": 115200,
+    "capabilities": {
+      "supportsBrightness": true,
+      "supportsScreenPower": true,
+      "supportsPartialUpdate": true,
+      "maxFramesPerSecond": 3
+    },
+    "support": "untested",
+    "notes": "Every message must be padded to a multiple of 250 bytes; an unpadded write leaves the firmware waiting and the panel stops responding until it is power-cycled."
+  },
+  {
+    "id": "kipye.qiye-3.5",
+    "vendor": "Kipye",
+    "model": "Qiye Smart Display 3.5\" (rev D)",
+    "driver": "turing.serial",
+    "usb": [{ "vendor": "0x454D", "product": "0x4E41" }],
+    "width": 320,
+    "height": 480,
+    "pixelFormat": "rgb565BigEndian",
+    "transport": "serial",
+    "probe": "turingRevisionD",
+    "baudRate": 115200,
+    "capabilities": {
+      "supportsBrightness": true,
+      "supportsScreenPower": true,
+      "supportsPartialUpdate": true,
+      "maxFramesPerSecond": 3
+    },
+    "support": "untested",
+    "notes": "Has no reset or clear command: blanking fills the screen with a colour and the backlight is switched by setting brightness to zero. Brightness is not inverted on this panel."
+  },
+  {
+    "id": "turing.usb-8.8",
+    "vendor": "Turing",
+    "model": "8.8\" rev 1.1 (USB)",
+    "aliases": ["Turing 8.8 WinUSB"],
+    "driver": "recognized-only",
+    "usb": [
+      { "vendor": "0x1CBE", "product": "0x0028" },
+      { "vendor": "0x1CBE", "product": "0x0046" },
+      { "vendor": "0x1CBE", "product": "0x0050" },
+      { "vendor": "0x1CBE", "product": "0x0080" },
+      { "vendor": "0x1CBE", "product": "0x0088" },
+      { "vendor": "0x1CBE", "product": "0x0092" },
+      { "vendor": "0x1CBE", "product": "0x0123" }
+    ],
+    "width": 480,
+    "height": 1920,
+    "pixelFormat": "jpeg",
+    "transport": "usbBulk",
+    "probe": "none",
+    "jpegQuality": 90,
+    "maxPayloadBytes": 1048576,
+    "capabilities": {
+      "supportsBrightness": true,
+      "supportsScreenPower": true,
+      "supportsPartialUpdate": true,
+      "maxFramesPerSecond": 20
+    },
+    "support": "partial",
+    "notes": "Recognised but not yet drivable. The newer bulk protocol is much faster than the serial revisions, but its command packets are obfuscated with a vendor key; RigGlass detects these panels and says so rather than failing silently. Covers the 2.8\" round and the 4.6\", 5.2\", 8.0\", 8.8\", 9.2\" and 12.3\" models. See docs/device-support.md."
+  }
+]

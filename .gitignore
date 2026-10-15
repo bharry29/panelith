@@ -28,5 +28,5 @@ coverage/
 Thumbs.db
 
 # Local runtime state (config, logs, captured frames)
-.omnipanel/
+.rigglass/
 *.log

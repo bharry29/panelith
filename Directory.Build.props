@@ -14,13 +14,13 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Package metadata">
-    <Product>OmniPanel</Product>
-    <Company>OmniPanel contributors</Company>
-    <Authors>OmniPanel contributors</Authors>
-    <Copyright>Copyright (c) OmniPanel contributors</Copyright>
+    <Product>RigGlass</Product>
+    <Company>RigGlass contributors</Company>
+    <Authors>RigGlass contributors</Authors>
+    <Copyright>Copyright (c) RigGlass contributors</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/bharry29/omnipanel</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/bharry29/omnipanel</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/bharry29/rigglass</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/bharry29/rigglass</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <VersionPrefix>0.1.0</VersionPrefix>
   </PropertyGroup>

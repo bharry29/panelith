@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>RigGlass.Monitoring</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/RigGlass.Monitoring/RigGlass.Monitoring.csproj" />
+  </ItemGroup>
+
+</Project>
