@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Panelith.App.Services;
 using Panelith.App.Services.Activity;
+using Panelith.Hosting;
 using Panelith.Hosting.Profiles;
 using Panelith.Imaging;
 using Panelith.Themes;
@@ -54,6 +55,70 @@ public sealed partial class ScreensViewModel : ObservableObject, IDisposable
 
     /// <summary>Where user screens live, for the "open folder" button.</summary>
     public string UserScreensFolder => _service.Runtime.Paths.ThemesDirectory;
+
+    /// <summary>The engine, for the import window.</summary>
+    internal PanelithService Service => _service;
+
+    /// <summary>Rereads the gallery and puts a newly made or changed screen on the panel.</summary>
+    public void ShowNew(string id)
+    {
+        Reload();
+        if (Find(id) is { } card)
+        {
+            Show(card);
+        }
+    }
+
+    /// <summary>Takes the wallpaper off one of the user's own screens.</summary>
+    [RelayCommand]
+    private void RemoveWallpaper(ScreenCardViewModel? card)
+    {
+        if (card is not { HasWallpaper: true, Theme: { } theme })
+        {
+            return;
+        }
+
+        try
+        {
+            var workshop = new ScreenWorkshop(_service.Library, _service.Runtime.Paths);
+            var (_, folder, _) = workshop.Editable(card.Id);
+            var plain = ScreenWorkshop.WithoutWallpaper(theme);
+            workshop.Save(plain, folder);
+            Reload();
+            ScreenWorkshop.RemoveUnusedWallpapers(folder, plain);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning("Could not remove the wallpaper from {Screen}: {Error}", card.Id, ex.Message);
+        }
+    }
+
+    /// <summary>Deletes one of the user's own screens.</summary>
+    public void Delete(ScreenCardViewModel card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        if (!card.IsUserTheme)
+        {
+            return;
+        }
+
+        if (card.IsActive && Cards.FirstOrDefault(c => c != card && !c.HasProblem) is { } next)
+        {
+            Show(next);
+        }
+
+        card.Dispose();
+        try
+        {
+            new ScreenWorkshop(_service.Library, _service.Runtime.Paths).Delete(card.Id);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning("Could not delete {Screen}: {Error}", card.Id, ex.Message);
+        }
+
+        Reload();
+    }
 
     partial void OnRotateScreensChanged(bool value)
     {

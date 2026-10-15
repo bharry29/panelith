@@ -21,6 +21,10 @@ internal static class Program
     {
         Arguments = args;
         ProcessHardening.RestrictDllSearch();
+        if (OperatingSystem.IsWindows() && MediaJobs.TryRunChild(args, out var exitCode))
+        {
+            return exitCode;
+        }
 
         // Only one copy may own the USB panel. A relaunch (for example after
         // "restart as administrator") waits for the previous copy to let go.

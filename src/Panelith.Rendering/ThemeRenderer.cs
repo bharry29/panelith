@@ -24,6 +24,7 @@ public sealed class ThemeRenderer : IDisposable
     private readonly ILogger? _logger;
     private readonly FontResolver _fonts;
     private readonly ThemeAssetCache _assets;
+    private readonly VideoClipCache _clips;
     private readonly PaintCache _paints = new();
     private readonly ColorCache _colors = new();
     private readonly RenderDiagnostics _diagnostics = new();
@@ -41,6 +42,7 @@ public sealed class ThemeRenderer : IDisposable
     private SKColor _letterboxColor;
     private SKColor _backgroundColor;
     private SKColor? _backgroundGradientTo;
+    private readonly SKColor? _scrimColor;
     private bool _disposed;
 
     /// <summary>Creates a renderer for <paramref name="theme"/>.</summary>
@@ -59,6 +61,8 @@ public sealed class ThemeRenderer : IDisposable
         var folder = options.ThemeFolder ?? theme.BasePath;
         _fonts = new FontResolver(folder, logger);
         _assets = new ThemeAssetCache(folder, capacity: options.MaxCachedImages, logger: logger);
+        _clips = new VideoClipCache(_assets, logger);
+        _scrimColor = theme.Background.Scrim is { } scrim ? ThemeColor.ParseOrDefault(scrim, ThemeColor.Black).ToSk() : null;
 
         _letterboxColor = ThemeColor.ParseOrDefault(theme.Canvas.Background, ThemeColor.Black).ToSk();
         _backgroundColor = ThemeColor.ParseOrDefault(theme.Background.Color, ThemeColor.Black).ToSk();
@@ -114,7 +118,7 @@ public sealed class ThemeRenderer : IDisposable
         canvas.Clear(SKColors.Transparent);
 
         DrawLetterbox(canvas);
-        DrawBackground(canvas);
+        DrawBackground(canvas, context.Now);
 
         var ctx = _widgetContext;
         ctx.Canvas = canvas;
@@ -122,6 +126,7 @@ public sealed class ThemeRenderer : IDisposable
         ctx.Defaults = _theme.Defaults;
         ctx.Fonts = _fonts;
         ctx.Assets = _assets;
+        ctx.Clips = _clips;
         ctx.Paints = _paints;
         ctx.Colors = _colors;
         ctx.Diagnostics = _diagnostics;
@@ -178,6 +183,7 @@ public sealed class ThemeRenderer : IDisposable
         _surface?.Dispose();
         _surface = null;
         _readback.Dispose();
+        _clips.Dispose();
         _paints.Dispose();
         _fonts.Dispose();
         _assets.Dispose();
@@ -230,6 +236,9 @@ public sealed class ThemeRenderer : IDisposable
                 case ImageWidget image:
                     ImageWidgetRenderer.Render(image, rect, ctx);
                     break;
+                case VideoWidget video:
+                    VideoWidgetRenderer.Render(video, rect, ctx);
+                    break;
                 case ShapeWidget shape:
                     ShapeWidgetRenderer.Render(shape, rect, ctx);
                     break;
@@ -278,7 +287,7 @@ public sealed class ThemeRenderer : IDisposable
         canvas.Clear(_letterboxColor);
     }
 
-    private void DrawBackground(SKCanvas canvas)
+    private void DrawBackground(SKCanvas canvas, DateTimeOffset now)
     {
         var bg = _theme.Background;
         var content = ThemeLayout.CanvasDeviceRect(_transform);
@@ -328,6 +337,22 @@ public sealed class ThemeRenderer : IDisposable
             paint.Color = SKColors.White;
             paint.ColorFilter = null;
             ImageFitHelper.Draw(canvas, bitmap, dest, bg.Fit, paint);
+        }
+
+        if (!string.IsNullOrWhiteSpace(bg.Video) && _clips.FrameAt(bg.Video, now, bg.VideoSpeed) is { } frame)
+        {
+            var paint = _paints.Image;
+            paint.Color = SKColors.White;
+            paint.ColorFilter = null;
+            ImageFitHelper.Draw(canvas, frame, dest, bg.Fit, paint);
+        }
+
+        if (_scrimColor is { } scrim)
+        {
+            var paint = _paints.Fill;
+            paint.Shader = null;
+            paint.Color = scrim;
+            canvas.DrawRect(dest, paint);
         }
     }
 

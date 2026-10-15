@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Panelith.Media</RootNamespace>
+    <Description>Bakes videos and images into panel-sized Panelith clips with Windows Media Foundation.</Description>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Vortice.MediaFoundation" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Panelith.Core/Panelith.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Panelith.Media.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -76,6 +76,10 @@
     <Setter Property="BorderBrush" Value="{StaticResource StrokeBrush}" />
     <Setter Property="BorderThickness" Value="1" />
   </Style>
+  <Style Selector="Button.small">
+    <Setter Property="Padding" Value="10,4" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
   <Style Selector="Button.thumb">
     <Setter Property="Padding" Value="0" />
     <Setter Property="Background" Value="Transparent" />

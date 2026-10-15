@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Panelith.Hosting/Panelith.Hosting.csproj" />
+    <ProjectReference Include="../Panelith.Media/Panelith.Media.csproj" />
   </ItemGroup>
 
   <ItemGroup>

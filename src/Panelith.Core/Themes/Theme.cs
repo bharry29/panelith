@@ -101,12 +101,18 @@ public readonly record struct ThemeCanvas(
 /// <param name="Fit">How that image fills the canvas.</param>
 /// <param name="GradientTo">When set, the background is a gradient from <paramref name="Color"/> to this.</param>
 /// <param name="GradientAngle">Gradient direction in degrees, clockwise from left-to-right.</param>
+/// <param name="Video">Path to a looping <c>.ptclip</c> clip drawn over the colour and image.</param>
+/// <param name="Scrim">Colour, usually translucent black, laid over the image or video so widgets stay readable.</param>
+/// <param name="VideoSpeed">Playback rate multiplier for <paramref name="Video"/>.</param>
 public readonly record struct ThemeBackground(
     string? Color = null,
     string? Image = null,
     ImageFit Fit = ImageFit.Cover,
     string? GradientTo = null,
-    double GradientAngle = 0d)
+    double GradientAngle = 0d,
+    string? Video = null,
+    string? Scrim = null,
+    double VideoSpeed = 1d)
 {
     /// <summary>An opaque near-black background.</summary>
     public static ThemeBackground Default { get; } = new("#000000");

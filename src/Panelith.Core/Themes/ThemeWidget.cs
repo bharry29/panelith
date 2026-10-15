@@ -17,6 +17,7 @@ namespace Panelith.Themes;
 [JsonDerivedType(typeof(GaugeWidget), "gauge")]
 [JsonDerivedType(typeof(GraphWidget), "graph")]
 [JsonDerivedType(typeof(ImageWidget), "image")]
+[JsonDerivedType(typeof(VideoWidget), "video")]
 [JsonDerivedType(typeof(ShapeWidget), "shape")]
 [JsonDerivedType(typeof(GroupWidget), "group")]
 public abstract record ThemeWidget
@@ -301,6 +302,19 @@ public sealed record ImageWidget : ThemeWidget
     /// the first frame.
     /// </summary>
     public double AnimationSpeed { get; init; } = 1d;
+}
+
+/// <summary>Plays a looping clip baked for the panel (a <c>.ptclip</c> file).</summary>
+public sealed record VideoWidget : ThemeWidget
+{
+    /// <summary>Path to the clip, relative to the theme folder.</summary>
+    public string Source { get; init; } = string.Empty;
+
+    /// <summary>How the clip fills its box.</summary>
+    public ImageFit Fit { get; init; } = ImageFit.Cover;
+
+    /// <summary>Playback rate multiplier. <c>0</c> freezes on the first frame.</summary>
+    public double Speed { get; init; } = 1d;
 }
 
 /// <summary>Which primitive a <see cref="ShapeWidget"/> draws.</summary>

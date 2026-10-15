@@ -214,6 +214,50 @@ public static class ThemeValidator
         {
             CheckAsset(theme, background.Image, "background.image", null, diagnostics);
         }
+
+        CheckColor(background.Scrim, "background.scrim", null, diagnostics);
+        if (!string.IsNullOrWhiteSpace(background.Video))
+        {
+            CheckClip(theme, background.Video, "background.video", null, checkAssets, diagnostics);
+        }
+    }
+
+    private static void CheckClip(Theme theme, string source, string path, string? widgetId, bool checkAssets, List<ThemeDiagnostic> diagnostics)
+    {
+        if (!source.EndsWith(Media.ClipFile.Extension, StringComparison.OrdinalIgnoreCase))
+        {
+            diagnostics.Add(new ThemeDiagnostic(
+                ThemeDiagnosticSeverity.Error,
+                $"\"{source}\" is not a {Media.ClipFile.Extension} clip. Import videos through Panelith so they are baked for the panel.",
+                widgetId,
+                path));
+            return;
+        }
+
+        if (!checkAssets || theme.BasePath is null)
+        {
+            return;
+        }
+
+        var before = diagnostics.Count;
+        CheckAsset(theme, source, path, widgetId, diagnostics);
+        if (diagnostics.Count != before)
+        {
+            return;
+        }
+
+        try
+        {
+            Media.ClipFile.ReadInfo(Path.GetFullPath(Path.Combine(theme.BasePath, source)));
+        }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException)
+        {
+            diagnostics.Add(new ThemeDiagnostic(
+                ThemeDiagnosticSeverity.Error,
+                $"The clip \"{source}\" cannot be played: {ex.Message}",
+                widgetId,
+                path));
+        }
     }
 
     private static void ValidateWidget(
@@ -354,6 +398,22 @@ public static class ThemeValidator
                 }
 
                 CheckColor(image.Tint, $"{path}.tint", widget.Id, diagnostics);
+                break;
+
+            case VideoWidget video:
+                if (string.IsNullOrWhiteSpace(video.Source))
+                {
+                    diagnostics.Add(new ThemeDiagnostic(
+                        ThemeDiagnosticSeverity.Error,
+                        "The video widget has no source.",
+                        widget.Id,
+                        $"{path}.source"));
+                }
+                else
+                {
+                    CheckClip(theme, video.Source, $"{path}.source", widget.Id, checkAssets, diagnostics);
+                }
+
                 break;
 
             case ShapeWidget shape:

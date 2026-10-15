@@ -156,7 +156,8 @@ public sealed class ThemeAssetCache : IDisposable
         _placeholder = null;
     }
 
-    private bool TryResolvePath(string relativePath, out string fullPath)
+    /// <summary>Resolves a theme-relative path, refusing anything outside the theme folder.</summary>
+    internal bool TryResolvePath(string relativePath, out string fullPath)
     {
         fullPath = string.Empty;
         if (_themeFolder is null)

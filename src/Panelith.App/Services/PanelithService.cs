@@ -46,6 +46,18 @@ public sealed class PanelithService : IAsyncDisposable
     /// <summary>The screen on the panel.</summary>
     public string ActiveScreen => Renderers.ActiveTheme ?? Options.Defaults.Theme;
 
+    /// <summary>The size of picture the panel shows, or the Trofeo's when no panel has connected yet.</summary>
+    public (int Width, int Height) PanelSize
+    {
+        get
+        {
+            var statuses = Host.Statuses;
+            return statuses.FirstOrDefault(s => s.State == PanelRuntimeState.Running)?.FrameSize
+                ?? statuses.FirstOrDefault(s => s.FrameSize is not null)?.FrameSize
+                ?? (1920, 480);
+        }
+    }
+
     /// <summary>Starts sensors and begins driving panels.</summary>
     public static async Task<PanelithService> StartAsync(AppLog log, bool demoSensors, CancellationToken cancellationToken = default)
     {

@@ -13,6 +13,7 @@ internal sealed class WidgetRenderContext
     public ThemeDefaults Defaults { get; set; }
     public FontResolver Fonts { get; set; } = null!;
     public ThemeAssetCache Assets { get; set; } = null!;
+    public VideoClipCache Clips { get; set; } = null!;
     public PaintCache Paints { get; set; } = null!;
     public ColorCache Colors { get; set; } = null!;
     public RenderDiagnostics Diagnostics { get; set; } = null!;

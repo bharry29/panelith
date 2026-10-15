@@ -9,6 +9,12 @@
 
       <DockPanel Margin="0,0,16,0">
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <Button Classes="accent" Click="NewVideoScreen" ToolTip.Tip="Make a screen that loops a video from this PC, cropped to the panel">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <PathIcon Data="{x:Static vm:Icons.Play}" Width="14" Height="14" />
+              <TextBlock Text="New video screen" />
+            </StackPanel>
+          </Button>
           <Button Classes="ghost" Command="{Binding ReloadCommand}" ToolTip.Tip="Reread every screen from disk after editing one">
             <StackPanel Orientation="Horizontal" Spacing="8">
               <PathIcon Data="{x:Static vm:Icons.Refresh}" Width="14" Height="14" />
@@ -82,6 +88,13 @@
                     <TextBlock Text="{Binding Description}" Classes="muted" FontSize="12" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
                   </StackPanel>
                 </DockPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding !HasProblem}">
+                  <Button Classes="ghost small" Content="Wallpaper..." Click="SetWallpaper" Tag="{Binding}"
+                          ToolTip.Tip="Put a picture or video behind this screen. Screens that come with Panelith are copied first." />
+                  <Button Classes="ghost small" Content="Remove wallpaper" IsVisible="{Binding HasWallpaper}"
+                          Command="{Binding $parent[ItemsControl].((vm:ScreensViewModel)DataContext).RemoveWallpaperCommand}" CommandParameter="{Binding}" />
+                  <Button Classes="ghost small" Content="Delete" Click="DeleteScreen" Tag="{Binding}" IsVisible="{Binding IsUserTheme}" />
+                </StackPanel>
               </StackPanel>
             </Border>
           </DataTemplate>

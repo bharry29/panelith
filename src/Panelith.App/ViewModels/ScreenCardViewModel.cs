@@ -42,6 +42,9 @@ public sealed partial class ScreenCardViewModel : ObservableObject, IDisposable
 
     public bool IsUserTheme { get; }
 
+    /// <summary>Whether this is the user's own screen with a wallpaper picture or video that can be removed.</summary>
+    public bool HasWallpaper => IsUserTheme && Theme is { Background: var b } && (b.Image is not null || b.Video is not null);
+
     public bool HasProblem { get; }
 
     public double AspectRatio { get; }
@@ -75,6 +78,7 @@ public sealed partial class ScreenCardViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _renderer?.Dispose();
+        _renderer = null;
         Thumbnail.Dispose();
     }
 }

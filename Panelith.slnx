@@ -3,6 +3,7 @@
     <Project Path="src/Panelith.Core/Panelith.Core.csproj" />
     <Project Path="src/Panelith.Devices/Panelith.Devices.csproj" />
     <Project Path="src/Panelith.Rendering/Panelith.Rendering.csproj" />
+    <Project Path="src/Panelith.Media/Panelith.Media.csproj" />
     <Project Path="src/Panelith.Monitoring/Panelith.Monitoring.csproj" />
     <Project Path="src/Panelith.Engine/Panelith.Engine.csproj" />
     <Project Path="src/Panelith.Hosting/Panelith.Hosting.csproj" />
@@ -13,6 +14,7 @@
     <Project Path="tests/Panelith.Core.Tests/Panelith.Core.Tests.csproj" />
     <Project Path="tests/Panelith.Devices.Tests/Panelith.Devices.Tests.csproj" />
     <Project Path="tests/Panelith.Rendering.Tests/Panelith.Rendering.Tests.csproj" />
+    <Project Path="tests/Panelith.Media.Tests/Panelith.Media.Tests.csproj" />
     <Project Path="tests/Panelith.Monitoring.Tests/Panelith.Monitoring.Tests.csproj" />
     <Project Path="tests/Panelith.Engine.Tests/Panelith.Engine.Tests.csproj" />
     <Project Path="tests/Panelith.Cli.Tests/Panelith.Cli.Tests.csproj" />
