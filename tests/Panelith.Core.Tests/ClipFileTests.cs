@@ -125,6 +125,29 @@ public sealed class ClipFileTests : IDisposable
     }
 
     [Fact]
+    public void LeftOutJsonValuesKeepTheirDefaults()
+    {
+        const string json = """
+            {
+              "id": "d",
+              "canvas": { "width": 100, "height": 50 },
+              "background": { "color": "#000000", "video": "clip.ptclip" },
+              "widgets": [ { "type": "graph", "x": 0, "y": 0, "width": 10, "height": 10, "series": [ { "value": "@cpu.load" } ] } ]
+            }
+            """;
+
+        var theme = ThemeSerializer.Deserialize(json);
+
+        Assert.Equal(1d, theme.Background.VideoSpeed);
+        Assert.Equal(ImageFit.Cover, theme.Background.Fit);
+        Assert.Equal(ThemeScaleMode.Fit, theme.Canvas.Scaling);
+        var series = Assert.Single(Assert.IsType<GraphWidget>(Assert.Single(theme.Widgets)).Series);
+        Assert.Equal(2d, series.Thickness);
+        Assert.Equal(0.25d, series.FillOpacity);
+        Assert.True(series.Smooth);
+    }
+
+    [Fact]
     public void VideoWidgetsAndBackgroundsSurviveJson()
     {
         var theme = new Theme

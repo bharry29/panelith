@@ -104,7 +104,7 @@ public readonly record struct ThemeCanvas(
 /// <param name="Video">Path to a looping <c>.ptclip</c> clip drawn over the colour and image.</param>
 /// <param name="Scrim">Colour, usually translucent black, laid over the image or video so widgets stay readable.</param>
 /// <param name="VideoSpeed">Playback rate multiplier for <paramref name="Video"/>.</param>
-public readonly record struct ThemeBackground(
+public sealed record ThemeBackground(
     string? Color = null,
     string? Image = null,
     ImageFit Fit = ImageFit.Cover,

@@ -277,7 +277,7 @@ public sealed record GraphWidget : ThemeWidget
 /// <param name="Fill">Whether to fill the area under the line.</param>
 /// <param name="FillOpacity">Opacity of that fill.</param>
 /// <param name="Smooth">Whether to draw a smoothed curve instead of straight segments.</param>
-public readonly record struct GraphSeries(
+public sealed record GraphSeries(
     string Value,
     string? Color = null,
     double Thickness = 2d,
