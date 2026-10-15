@@ -18,6 +18,18 @@ public sealed class PanelDiscoveryServiceTests
     }
 
     [Fact]
+    public async Task HidesTheVirtualPanelWhenItIsSwitchedOff()
+    {
+        var service = PanelDiscoveryService.CreateDefault(
+            EmptyContext(),
+            new VirtualPanelOptions { Enabled = false });
+
+        var panels = await service.DiscoverAsync(TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain(panels, panel => panel.Descriptor.ProfileId == "rigglass.virtual");
+    }
+
+    [Fact]
     public async Task ReportsOnePanelWhenTwoDriversSeeTheSameDevice()
     {
         // 0416:5406 is matched by both the SCSI profile and - in this fixture -

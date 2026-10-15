@@ -1,5 +1,7 @@
 using RigGlass.Expressions;
+using RigGlass.Imaging;
 using RigGlass.Sensors;
+using RigGlass.Rendering.Widgets;
 using RigGlass.Themes;
 using Xunit;
 
@@ -29,6 +31,64 @@ public sealed class ThemeRendererRobustnessTests
         using var renderer = new ThemeRenderer(theme, new ThemeRenderOptions(64, 32));
         using var frame = renderer.Render(EmptyBindingContext.Instance);
         Assert.Equal(64, frame.Width);
+        Assert.True(CountLightPixels(frame) > 20, "Text did not produce any visible pixels.");
+    }
+
+    [Fact]
+    public void BundledInterDrawsGlyphsWhenTheSystemHasNoFontConfig()
+    {
+        var theme = new Theme
+        {
+            Canvas = new ThemeCanvas(320, 120, ThemeScaleMode.None, "#000000"),
+            Background = new ThemeBackground("#000000"),
+            Defaults = new ThemeDefaults("Inter", "#ffffff", "#ffffff", "#333333"),
+            Widgets =
+            [
+                new TextWidget
+                {
+                    X = 8,
+                    Y = 8,
+                    Width = 300,
+                    Height = 100,
+                    Text = "RIGGLASS 58",
+                    FontFamily = "Inter",
+                    FontSize = 48,
+                    FontWeight = 700,
+                    Color = "#ffffff",
+                    ShrinkToFit = false,
+                },
+            ],
+        };
+
+        using var renderer = new ThemeRenderer(theme, new ThemeRenderOptions(320, 120));
+        using var frame = renderer.Render(EmptyBindingContext.Instance);
+
+        Assert.True(CountLightPixels(frame) > 200, "Inter glyphs were not drawn.");
+    }
+
+    [Fact]
+    public void WidthStabilisationLeavesDecimalsAndClocksAlone()
+    {
+        Assert.Equal("13.5 GiB", TextWidgetRenderer.Stabilize("13.5 GiB"));
+        Assert.Equal("1:00:07", TextWidgetRenderer.Stabilize("1:00:07"));
+        Assert.Equal("34.8 MiB/s", TextWidgetRenderer.Stabilize("34.8 MiB/s"));
+        Assert.Equal("\u200757", TextWidgetRenderer.Stabilize("57"));
+        Assert.Equal("100", TextWidgetRenderer.Stabilize("100"));
+    }
+
+    private static int CountLightPixels(FrameBuffer frame)
+    {
+        var pixels = frame.ReadOnlySpan;
+        var light = 0;
+        for (var i = 0; i + 3 < pixels.Length; i += 4)
+        {
+            if (pixels[i] > 40 || pixels[i + 1] > 40 || pixels[i + 2] > 40)
+            {
+                light++;
+            }
+        }
+
+        return light;
     }
 
     [Fact]

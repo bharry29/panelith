@@ -156,7 +156,7 @@ public sealed class PanelProfileRegistry
             .Where(p => p.Matches(vendorId, productId, serialNumber))
             .OrderByDescending(p => p.Usb.Any(u => u.SerialNumber is not null))
             .ThenByDescending(p => p.IsUserDefined)
-            .ThenByDescending(p => p.Support)
+            .ThenByDescending(p => SupportRank(p.Support))
             .ThenBy(p => p.Id, StringComparer.OrdinalIgnoreCase)];
 
     /// <summary>Every USB id any profile matches, for narrowing enumeration.</summary>
@@ -183,6 +183,23 @@ public sealed class PanelProfileRegistry
             return ids;
         }
     }
+
+    /// <summary>
+    /// How strongly a support level should win a USB-id tie.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="PanelSupportLevel"/> is ordered for display, not for preference.
+    /// A partial profile must not outrank a community-tested one just because
+    /// its enum value is larger.
+    /// </remarks>
+    private static int SupportRank(PanelSupportLevel level) => level switch
+    {
+        PanelSupportLevel.Verified => 4,
+        PanelSupportLevel.Community => 3,
+        PanelSupportLevel.Untested => 2,
+        PanelSupportLevel.Partial => 1,
+        _ => 0,
+    };
 
     /// <summary>Profiles handled by a given driver.</summary>
     public IReadOnlyList<PanelProfile> ForDriver(string driverId) =>

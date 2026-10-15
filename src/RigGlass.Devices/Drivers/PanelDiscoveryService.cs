@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using RigGlass.Devices.Profiles;
 
 namespace RigGlass.Devices.Drivers;
 
@@ -24,16 +25,24 @@ public sealed class PanelDiscoveryService
 {
     private readonly IReadOnlyList<IPanelDriver> _drivers;
     private readonly ILogger _logger;
+    private readonly PanelProfileRegistry? _catalogue;
 
     /// <summary>Creates the service.</summary>
     /// <param name="drivers">The drivers to poll.</param>
     /// <param name="logger">Log sink.</param>
-    public PanelDiscoveryService(IEnumerable<IPanelDriver> drivers, ILogger<PanelDiscoveryService>? logger = null)
+    /// <param name="catalogue">
+    /// Profile catalogue, used when a user forces a profile onto a detected panel.
+    /// </param>
+    public PanelDiscoveryService(
+        IEnumerable<IPanelDriver> drivers,
+        ILogger<PanelDiscoveryService>? logger = null,
+        PanelProfileRegistry? catalogue = null)
     {
         ArgumentNullException.ThrowIfNull(drivers);
 
         _drivers = [.. drivers];
         _logger = logger as ILogger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+        _catalogue = catalogue;
     }
 
     /// <summary>The drivers being polled.</summary>
@@ -56,7 +65,52 @@ public sealed class PanelDiscoveryService
                 new RecognizedOnlyDriver(context),
                 new VirtualPanelDriver(context, virtualOptions),
             ],
-            context.LoggerFactory.CreateLogger<PanelDiscoveryService>());
+            context.LoggerFactory.CreateLogger<PanelDiscoveryService>(),
+            context.Profiles);
+    }
+
+    /// <summary>
+    /// Rewrites a detected panel so it is opened with a profile the user named.
+    /// </summary>
+    /// <returns>Whether <paramref name="rewritten"/> should be used.</returns>
+    public bool TryApplyForcedProfile(
+        DetectedPanel panel,
+        string profileId,
+        out DetectedPanel rewritten,
+        out string? problem)
+    {
+        ArgumentNullException.ThrowIfNull(panel);
+        rewritten = panel;
+        problem = null;
+
+        if (_catalogue is null)
+        {
+            problem = "Panel profiles are not available, so a forced profile cannot be applied.";
+            return false;
+        }
+
+        var profile = _catalogue.Find(profileId);
+        if (profile is null)
+        {
+            problem = $"No panel profile named \"{profileId}\" is loaded. The detected profile will be used.";
+            return false;
+        }
+
+        rewritten = panel with
+        {
+            Descriptor = profile.ToDescriptor(),
+            DriverId = profile.Driver,
+            Confidence = PanelMatchConfidence.UserDefined,
+        };
+
+        if (DriverFor(rewritten) is null)
+        {
+            problem = $"The profile \"{profileId}\" uses the \"{profile.Driver}\" driver, which is not registered.";
+            rewritten = panel;
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>Finds every panel attached right now.</summary>

@@ -38,6 +38,17 @@ public sealed class PanelProfileRegistryTests
     }
 
     [Fact]
+    public void PrefersTheTrofeo686WhenItSharesAUsbIdWithTheFrozenMagicCooler()
+    {
+        var registry = PanelProfileRegistry.Load();
+
+        var matches = registry.FindByUsb(0x0416, 0x5302);
+
+        Assert.Equal("thermalright.trofeo-vision-6.86", matches[0].Id);
+        Assert.Contains(matches, profile => profile.Id == "thermalright.frozen-magic-hid");
+    }
+
+    [Fact]
     public void PrefersTheSerialNumberMatchWhenOneUsbIdCoversSeveralPanels()
     {
         var registry = PanelProfileRegistry.Load();

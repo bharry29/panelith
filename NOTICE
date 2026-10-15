@@ -50,6 +50,15 @@ vendor. All trademarks are the property of their respective owners. Vendor and
 model names appear in this project solely to identify hardware compatibility.
 
 ================================================================================
+Bundled font
+================================================================================
+
+Themes default to Inter, which is included in this repository under the SIL
+Open Font License, Version 1.1. The font files and the license text are in
+src/RigGlass.Rendering/Fonts/. Copyright (c) 2016 The Inter Project Authors
+(https://github.com/rsms/inter).
+
+================================================================================
 Third-party dependencies
 ================================================================================
 

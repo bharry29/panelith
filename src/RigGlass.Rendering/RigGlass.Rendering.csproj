@@ -16,6 +16,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Fonts\*.ttf" />
+    <EmbeddedResource Include="Fonts\OFL.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="RigGlass.Rendering.Tests" />
   </ItemGroup>
 

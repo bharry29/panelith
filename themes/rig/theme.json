@@ -1,0 +1,234 @@
+{
+  "schema": 1,
+  "id": "rig",
+  "name": "Rig",
+  "author": "RigGlass",
+  "description": "A dark sensor dashboard authored at 1280x480. Side panels stay pinned, so the same file fills a 6.86 inch Trofeo and a 9.16 inch one.",
+  "canvas": { "width": 1280, "height": 480, "scaling": "none", "background": "#07090d" },
+  "background": { "color": "#07090d", "gradientTo": "#10151d", "gradientAngle": 110 },
+  "defaults": {
+    "fontFamily": "Inter",
+    "color": "#e8eef6",
+    "accentColor": "#3ee0c5",
+    "trackColor": "#1c2430"
+  },
+  "widgets": [
+    {
+      "type": "shape",
+      "id": "accent",
+      "x": 0, "y": 0, "width": 1280, "height": 4,
+      "anchor": 7,
+      "shape": "rectangle",
+      "fill": "#3ee0c5"
+    },
+    {
+      "type": "text",
+      "id": "mark",
+      "x": 28, "y": 22, "width": 280, "height": 28,
+      "anchor": 3,
+      "text": "RIGGLASS",
+      "fontSize": 16,
+      "fontWeight": 700,
+      "letterSpacing": 3,
+      "color": "#3ee0c5"
+    },
+    {
+      "type": "text",
+      "id": "host",
+      "x": 860, "y": 22, "width": 392, "height": 28,
+      "anchor": 6,
+      "text": "{@sys.host}",
+      "fontSize": 16,
+      "align": "right",
+      "color": "#8ea0b5"
+    },
+    {
+      "type": "text",
+      "id": "cpu-label",
+      "x": 28, "y": 78, "width": 360, "height": 24,
+      "anchor": 3,
+      "text": "CPU",
+      "fontSize": 14,
+      "fontWeight": 700,
+      "letterSpacing": 2,
+      "color": "#8ea0b5"
+    },
+    {
+      "type": "text",
+      "id": "cpu-temp",
+      "x": 28, "y": 104, "width": 360, "height": 110,
+      "anchor": 3,
+      "text": "{@cpu.temp:0}\u00b0",
+      "fontSize": 84,
+      "fontWeight": 700,
+      "colorBinding": "@cpu.temp",
+      "colorStops": [
+        { "at": 0, "color": "#3ee0c5" },
+        { "at": 70, "color": "#f0c14a" },
+        { "at": 85, "color": "#ff5d73" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "cpu-load-label",
+      "x": 28, "y": 230, "width": 360, "height": 28,
+      "anchor": 3,
+      "text": "LOAD  {@cpu.load:0}%",
+      "fontSize": 18,
+      "color": "#c5d0dc"
+    },
+    {
+      "type": "bar",
+      "id": "cpu-load",
+      "x": 28, "y": 266, "width": 360, "height": 16,
+      "anchor": 3,
+      "value": "@cpu.load",
+      "minimum": 0,
+      "maximum": 100,
+      "cornerRadius": 8,
+      "color": "#3ee0c5",
+      "trackColor": "#1c2430"
+    },
+    {
+      "type": "text",
+      "id": "cpu-meta",
+      "x": 28, "y": 300, "width": 360, "height": 56,
+      "anchor": 3,
+      "text": "{@cpu.clock:clock0}    {@cpu.power:0} W",
+      "fontSize": 18,
+      "color": "#8ea0b5"
+    },
+    {
+      "type": "text",
+      "id": "gpu-label",
+      "x": 430, "y": 78, "width": 360, "height": 24,
+      "anchor": 3,
+      "text": "GPU",
+      "fontSize": 14,
+      "fontWeight": 700,
+      "letterSpacing": 2,
+      "color": "#8ea0b5"
+    },
+    {
+      "type": "text",
+      "id": "gpu-temp",
+      "x": 430, "y": 104, "width": 360, "height": 110,
+      "anchor": 3,
+      "text": "{@gpu.temp:0}\u00b0",
+      "fontSize": 84,
+      "fontWeight": 700,
+      "colorBinding": "@gpu.temp",
+      "colorStops": [
+        { "at": 0, "color": "#7aa2ff" },
+        { "at": 75, "color": "#f0c14a" },
+        { "at": 88, "color": "#ff5d73" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "gpu-load-label",
+      "x": 430, "y": 230, "width": 360, "height": 28,
+      "anchor": 3,
+      "text": "LOAD  {@gpu.load:0}%",
+      "fontSize": 18,
+      "color": "#c5d0dc"
+    },
+    {
+      "type": "bar",
+      "id": "gpu-load",
+      "x": 430, "y": 266, "width": 360, "height": 16,
+      "anchor": 3,
+      "value": "@gpu.load",
+      "minimum": 0,
+      "maximum": 100,
+      "cornerRadius": 8,
+      "color": "#7aa2ff",
+      "trackColor": "#1c2430"
+    },
+    {
+      "type": "text",
+      "id": "gpu-meta",
+      "x": 430, "y": 300, "width": 360, "height": 56,
+      "anchor": 3,
+      "text": "{@gpu.power:0} W    VRAM {@gpu.vram.used:bytes}",
+      "fontSize": 18,
+      "color": "#8ea0b5"
+    },
+    {
+      "type": "text",
+      "id": "mem-label",
+      "x": 28, "y": 378, "width": 200, "height": 24,
+      "anchor": 9,
+      "text": "MEMORY",
+      "fontSize": 14,
+      "fontWeight": 700,
+      "letterSpacing": 2,
+      "color": "#8ea0b5"
+    },
+    {
+      "type": "text",
+      "id": "mem-value",
+      "x": 240, "y": 374, "width": 550, "height": 28,
+      "anchor": 9,
+      "text": "{@mem.used:bytes}  /  {@mem.total:bytes}",
+      "fontSize": 18,
+      "color": "#c5d0dc"
+    },
+    {
+      "type": "bar",
+      "id": "mem-bar",
+      "x": 28, "y": 414, "width": 762, "height": 14,
+      "anchor": 13,
+      "value": "@mem.load",
+      "minimum": 0,
+      "maximum": 100,
+      "cornerRadius": 7,
+      "color": "#f0c14a",
+      "trackColor": "#1c2430"
+    },
+    {
+      "type": "text",
+      "id": "net",
+      "x": 28, "y": 442, "width": 762, "height": 26,
+      "anchor": 9,
+      "text": "DOWN {@net.down:rate}     UP {@net.up:rate}     ON {@sys.uptime:duration}",
+      "fontSize": 16,
+      "color": "#8ea0b5"
+    },
+    {
+      "type": "shape",
+      "id": "graph-plate",
+      "x": 860, "y": 70, "width": 392, "height": 386,
+      "anchor": 14,
+      "shape": "rectangle",
+      "fill": "#0d121a",
+      "cornerRadius": 16
+    },
+    {
+      "type": "text",
+      "id": "graph-label",
+      "x": 884, "y": 86, "width": 344, "height": 24,
+      "anchor": 6,
+      "text": "CPU TEMPERATURE",
+      "fontSize": 13,
+      "fontWeight": 700,
+      "letterSpacing": 1.5,
+      "color": "#8ea0b5"
+    },
+    {
+      "type": "graph",
+      "id": "cpu-graph",
+      "x": 884, "y": 122, "width": 344, "height": 310,
+      "anchor": 14,
+      "windowSeconds": 120,
+      "minimum": 30,
+      "maximum": 100,
+      "gridColor": "#1c2430",
+      "gridDivisions": 4,
+      "backgroundColor": "#00000000",
+      "series": [
+        { "value": "@cpu.temp", "color": "#3ee0c5", "thickness": 3, "fill": true, "fillOpacity": 0.18 }
+      ]
+    }
+  ]
+}

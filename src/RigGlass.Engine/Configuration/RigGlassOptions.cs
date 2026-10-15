@@ -56,6 +56,8 @@ public sealed record RigGlassOptions
             Brightness = Defaults.Brightness,
             FramesPerSecond = Defaults.FramesPerSecond,
             JpegQuality = Defaults.JpegQuality,
+            FlipHorizontally = Defaults.FlipHorizontally,
+            ForceProfile = Defaults.ForceProfile,
         };
     }
 
@@ -111,7 +113,7 @@ public sealed record RigGlassOptions
 public record PanelDefaults
 {
     /// <summary>Theme id to show.</summary>
-    public string Theme { get; init; } = "starter";
+    public string Theme { get; init; } = "rig";
 
     /// <summary>Whether matching panels are driven.</summary>
     public bool Enabled { get; init; } = true;
@@ -133,6 +135,16 @@ public record PanelDefaults
 
     /// <summary>Whether the image is mirrored, for panels behind a mirror bracket.</summary>
     public bool FlipHorizontally { get; init; }
+
+    /// <summary>
+    /// Forces a specific panel profile rather than letting matching decide.
+    /// </summary>
+    /// <remarks>
+    /// The escape hatch for hardware whose USB ids collide with another model,
+    /// such as the Trofeo Vision 6.86" and the Frozen Magic cooler screens,
+    /// which both announce themselves as <c>0416:5302</c>.
+    /// </remarks>
+    public string? ForceProfile { get; init; }
 
     /// <summary>Reports settings that cannot be honoured.</summary>
     public IReadOnlyList<string> Validate()
@@ -168,15 +180,6 @@ public sealed record PanelAssignment : PanelDefaults
 
     /// <summary>A name the user chose, shown instead of the model name.</summary>
     public string? DisplayName { get; init; }
-
-    /// <summary>
-    /// Forces a specific panel profile rather than letting matching decide.
-    /// </summary>
-    /// <remarks>
-    /// The escape hatch for hardware whose USB ids collide with another model.
-    /// Without it, a user with an unlucky panel has no way forward at all.
-    /// </remarks>
-    public string? ForceProfile { get; init; }
 
     /// <summary>Theme variables overridden for this panel.</summary>
     /// <remarks>

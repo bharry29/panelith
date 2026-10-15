@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>RigGlass.Cli</RootNamespace>
+    <AssemblyName>rigglass</AssemblyName>
+    <Description>RigGlass command line: discover panels, preview themes, and drive a screen.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../RigGlass.Engine/RigGlass.Engine.csproj" />
+    <ProjectReference Include="../RigGlass.Devices/RigGlass.Devices.csproj" />
+    <ProjectReference Include="../RigGlass.Rendering/RigGlass.Rendering.csproj" />
+    <ProjectReference Include="../RigGlass.Monitoring/RigGlass.Monitoring.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="../../themes/**/*" CopyToOutputDirectory="PreserveNewest" LinkBase="themes" />
+  </ItemGroup>
+
+</Project>

@@ -77,7 +77,8 @@ public sealed class FontResolver : IDisposable
             }
         }
 
-        // (b) Installed system fonts by family name.
+        // (b) Installed system fonts by family name. This works on Windows and
+        // macOS. The Linux build does not link fontconfig, so it usually misses.
         if (!string.IsNullOrWhiteSpace(key.Family))
         {
             var matched = SKTypeface.FromFamilyName(key.Family, fontStyle);
@@ -87,11 +88,35 @@ public sealed class FontResolver : IDisposable
             }
 
             matched?.Dispose();
+        }
+
+        // (c) Font files on disk, for Linux hosts that have fonts installed
+        // even though Skia cannot ask fontconfig for them.
+        var fromDisk = SystemFontIndex.Match(key.Family, key.Weight, key.Italic);
+        if (fromDisk is not null)
+        {
+            return fromDisk;
+        }
+
+        // (d) Inter, shipped inside this assembly. Text must still appear on a
+        // machine with no fonts installed at all.
+        if (string.IsNullOrWhiteSpace(key.Family)
+            || key.Family.Equals("Inter", StringComparison.OrdinalIgnoreCase)
+            || key.Family.Contains("sans", StringComparison.OrdinalIgnoreCase))
+        {
+            var bundled = BundledFonts.Create(key.Weight, key.Italic);
+            if (bundled is not null)
+            {
+                return bundled;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(key.Family))
+        {
             WarnOnce(key.Family);
         }
 
-        // (c) Bundled / common Linux fallbacks, then Skia default.
-        return GetFallback(fontStyle);
+        return BundledFonts.Create(key.Weight, key.Italic) ?? GetFallback(fontStyle);
     }
 
     private SKTypeface? MatchThemeFile(string family, SKFontStyle style)

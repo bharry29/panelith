@@ -50,6 +50,11 @@ public sealed class VirtualPanelDriver : IPanelDriver
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        if (!_options.Enabled)
+        {
+            return ValueTask.FromResult<IReadOnlyList<DetectedPanel>>([]);
+        }
+
         var detected = new List<DetectedPanel>();
         foreach (var profile in _context.Profiles.ForDriver(Id))
         {
@@ -116,6 +121,16 @@ public sealed record VirtualPanelOptions
 
     /// <summary>Stop after this many frames, or <see langword="null"/> for no limit.</summary>
     public int? FrameLimit { get; init; }
+
+    /// <summary>
+    /// Whether discovery should report the virtual panel.
+    /// </summary>
+    /// <remarks>
+    /// On by default so theme work and tests have a screen with no hardware.
+    /// The command line turns it off unless <c>--virtual</c> is passed, because
+    /// a fake panel in the device list looks like the real one was found.
+    /// </remarks>
+    public bool Enabled { get; init; } = true;
 }
 
 /// <summary>An open connection to a virtual panel.</summary>

@@ -190,8 +190,13 @@ internal static class TextWidgetRenderer
                 }
 
                 var run = text[start..i];
+                // Leave decimals ("13.5"), clocks ("1:00:07") and similar
+                // punctuation alone. Padding those runs inserts figure spaces
+                // that read as a broken gap ("13.  5").
+                var stuckToPunctuation = start > 0 && text[start - 1] is '.' or ':'
+                    || i < text.Length && text[i] is '.' or ':';
                 const int minDigits = 3;
-                if (run.Length < minDigits)
+                if (!stuckToPunctuation && run.Length < minDigits)
                 {
                     builder.Append(FigureSpace, minDigits - run.Length);
                 }

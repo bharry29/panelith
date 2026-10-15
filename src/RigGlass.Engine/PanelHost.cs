@@ -224,16 +224,30 @@ public sealed class PanelHost : IAsyncDisposable
                 }
             }
 
-            foreach (var (key, panel) in present)
+            foreach (var (key, detected) in present)
             {
                 if (_supervisors.ContainsKey(key))
                 {
                     continue;
                 }
 
+                var assignment = _options.AssignmentFor(detected);
+                var panel = detected;
+                if (!string.IsNullOrWhiteSpace(assignment.ForceProfile))
+                {
+                    if (_discovery.TryApplyForcedProfile(detected, assignment.ForceProfile, out var forced, out var problem))
+                    {
+                        panel = forced;
+                    }
+                    else if (problem is not null)
+                    {
+                        _logger.LogWarning("{Problem}", problem);
+                    }
+                }
+
                 var supervisor = new PanelSupervisor(
                     panel,
-                    _options.AssignmentFor(panel),
+                    assignment,
                     new DiscoveryConnectionFactory(_discovery),
                     _renderers,
                     _bindings,

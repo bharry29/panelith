@@ -8,8 +8,9 @@ using RigGlass.Imaging;
 namespace RigGlass.Devices.Drivers;
 
 /// <summary>
-/// Drives the Thermalright "LY" bulk panels: the Trofeo Vision family, sold at
-/// 6.86", 9.16" and 11.3".
+/// Drives the Thermalright "LY" bulk panels: the Trofeo Vision 9.16" and 11.3".
+/// The 6.86" is a different device (HID <c>0416:5302</c>) and is handled by
+/// <see cref="ThermalrightHidDriver"/>.
 /// </summary>
 /// <remarks>
 /// One driver covers every size in the family because the panel reports its own
