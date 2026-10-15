@@ -60,6 +60,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Profiles = new ProfilesViewModel(ProfileController, Screens);
         Dashboard = new DashboardViewModel(service, Screens);
         Sensors = new SensorsViewModel(service);
+        Designer = new DesignerViewModel(service, Screens);
         Settings = new SettingsViewModel(service, store, settings, _hotkeys);
         Settings.ElevationRequested += (_, _) => ElevationRequested?.Invoke(this, EventArgs.Empty);
         Settings.HotkeysChanged += (_, _) => RegisterHotkeys();
@@ -69,6 +70,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         [
             new("Dashboard", Icons.Dashboard, Dashboard),
             new("Screens", Icons.Screens, Screens),
+            new("Designer", Icons.Designer, Designer),
             new("Profiles", Icons.Profiles, Profiles),
             new("Sensors", Icons.Sensors, Sensors),
             new("Settings", Icons.Settings, Settings),
@@ -130,6 +132,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public SensorsViewModel Sensors { get; }
 
+    public DesignerViewModel Designer { get; }
+
     public SettingsViewModel Settings { get; }
 
     public IReadOnlyList<NavItem> NavItems { get; }
@@ -168,7 +172,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public bool IsElevated => WindowsIntegration.IsElevated;
 
-    partial void OnSelectedNavChanged(NavItem value) => SlowTick();
+    partial void OnSelectedNavChanged(NavItem value)
+    {
+        if (value.Page == Designer)
+        {
+            Designer.RefreshScreens();
+            Designer.RefreshSensors();
+        }
+
+        SlowTick();
+    }
 
     [RelayCommand]
     private void NextScreen()
@@ -206,6 +219,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _hotkeys.Dispose();
         ProfileController.Dispose();
         Dashboard.Dispose();
+        Designer.Dispose();
         Screens.Dispose();
     }
 
@@ -293,6 +307,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         else if (SelectedNav.Page == Sensors)
         {
             Sensors.Refresh();
+        }
+        else if (SelectedNav.Page == Designer)
+        {
+            Designer.RefreshRender();
         }
         else if (SelectedNav.Page == Settings)
         {

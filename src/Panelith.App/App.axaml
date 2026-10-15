@@ -13,6 +13,9 @@
     <DataTemplate DataType="vm:ScreensViewModel">
       <views:ScreensView />
     </DataTemplate>
+    <DataTemplate DataType="vm:DesignerViewModel">
+      <views:DesignerView />
+    </DataTemplate>
     <DataTemplate DataType="vm:ProfilesViewModel">
       <views:ProfilesView />
     </DataTemplate>

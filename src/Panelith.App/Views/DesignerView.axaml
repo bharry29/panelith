@@ -1,0 +1,123 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Panelith.App.ViewModels"
+             xmlns:c="using:Panelith.App.Controls"
+             x:Class="Panelith.App.Views.DesignerView"
+             x:DataType="vm:DesignerViewModel"
+             Focusable="True">
+  <UserControl.Resources>
+    <DataTemplate x:Key="FieldTemplate" x:DataType="vm:PropertyField">
+      <Grid ColumnDefinitions="118,*" Margin="0,3">
+        <TextBlock Text="{Binding Label}" Classes="muted" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Path}" />
+        <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
+          <TextBox Text="{Binding Text, UpdateSourceTrigger=LostFocus}" IsVisible="{Binding IsText}" FontSize="12" MinHeight="28" Padding="6,3" />
+          <TextBox Text="{Binding Text, UpdateSourceTrigger=LostFocus}" IsVisible="{Binding IsLongText}" FontSize="12" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="48" Padding="6,3" />
+          <CheckBox IsChecked="{Binding Flag}" IsVisible="{Binding IsFlag}" />
+          <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding Choice}" IsVisible="{Binding IsChoice}" HorizontalAlignment="Stretch" FontSize="12" />
+          <Border Grid.Column="1" IsVisible="{Binding IsColor}" Width="22" Height="22" CornerRadius="5" Margin="6,0,0,0"
+                  Background="{Binding Swatch}" BorderBrush="{StaticResource StrokeBrush}" BorderThickness="1" />
+        </Grid>
+      </Grid>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <Grid ColumnDefinitions="*,340" RowDefinitions="Auto,*" Margin="28,22,20,20">
+
+    <!-- Top bar -->
+    <DockPanel Grid.ColumnSpan="2" Margin="0,0,0,14">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button Classes="ghost" Command="{Binding UndoCommand}" ToolTip.Tip="Undo (Ctrl+Z)" Content="Undo" />
+        <Button Classes="ghost" Command="{Binding RedoCommand}" ToolTip.Tip="Redo (Ctrl+Y)" Content="Redo" />
+        <Button Classes="ghost" Command="{Binding SaveCommand}" IsEnabled="{Binding HasDocument}" ToolTip.Tip="Save to your screens folder (Ctrl+S)" Content="Save" />
+        <Button Classes="accent" Command="{Binding ShowOnPanelCommand}" IsEnabled="{Binding HasDocument}" Content="Show on panel" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+        <TextBlock Text="{Binding Title}" Classes="h1" VerticalAlignment="Center" MaxWidth="360" TextTrimming="CharacterEllipsis" />
+        <ComboBox ItemsSource="{Binding ScreenChoices}" SelectedItem="{Binding OpenScreen}" PlaceholderText="Open a screen..." MinWidth="240" VerticalAlignment="Center" />
+        <Button Classes="ghost" Command="{Binding NewScreenCommand}" Content="New blank screen" VerticalAlignment="Center" />
+      </StackPanel>
+    </DockPanel>
+
+    <!-- Canvas and toolbox -->
+    <DockPanel Grid.Row="1" Margin="0,0,16,0">
+      <Border DockPanel.Dock="Top" Classes="card" Padding="12,10" Margin="0,0,0,12">
+        <WrapPanel ItemSpacing="6" LineSpacing="6">
+          <TextBlock Text="ADD" Classes="label" VerticalAlignment="Center" Margin="0,0,4,0" />
+          <Button Classes="ghost small" Content="Text" Command="{Binding AddWidgetCommand}" CommandParameter="Text" />
+          <Button Classes="ghost small" Content="Bar" Command="{Binding AddWidgetCommand}" CommandParameter="Bar" />
+          <Button Classes="ghost small" Content="Gauge" Command="{Binding AddWidgetCommand}" CommandParameter="Gauge" />
+          <Button Classes="ghost small" Content="Graph" Command="{Binding AddWidgetCommand}" CommandParameter="Graph" />
+          <Button Classes="ghost small" Content="Shape" Command="{Binding AddWidgetCommand}" CommandParameter="Shape" />
+          <Button Classes="ghost small" Content="Picture..." Click="AddImage" />
+          <Button Classes="ghost small" Content="Wallpaper..." Click="SetWallpaper" IsEnabled="{Binding HasDocument}"
+                  ToolTip.Tip="Put a picture or video behind the whole screen" />
+        </WrapPanel>
+      </Border>
+      <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Classes="muted" FontSize="12" TextWrapping="Wrap" Margin="0,10,0,0" />
+      <TextBlock DockPanel.Dock="Bottom" Classes="faint" FontSize="11" Margin="0,8,0,0" TextWrapping="Wrap"
+                 Text="Click a widget to select it. Drag to move, drag the corner to resize (Shift keeps the shape). Arrow keys nudge, Delete removes, Ctrl+D duplicates." />
+      <Border Background="#000000" CornerRadius="10" Padding="6" VerticalAlignment="Top">
+        <Grid>
+          <c:DesignCanvas Designer="{Binding}" />
+          <StackPanel IsVisible="{Binding !HasDocument}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6" Margin="0,40">
+            <TextBlock Text="Open a screen above, or start a blank one." HorizontalAlignment="Center" />
+            <TextBlock Text="Screens that come with Panelith are copied when you save, so the originals stay as they were." Classes="muted" FontSize="12" HorizontalAlignment="Center" />
+          </StackPanel>
+        </Grid>
+      </Border>
+    </DockPanel>
+
+    <!-- Side panel -->
+    <ScrollViewer Grid.Row="1" Grid.Column="1">
+      <StackPanel Spacing="12" Margin="0,0,8,0" IsVisible="{Binding HasDocument}">
+        <Border Classes="card" Padding="14">
+          <StackPanel Spacing="8">
+            <DockPanel>
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4">
+                <Button Classes="ghost small" Content="Forward" Command="{Binding MoveUpCommand}" ToolTip.Tip="Draw over the widget above it in the list" />
+                <Button Classes="ghost small" Content="Back" Command="{Binding MoveDownCommand}" />
+                <Button Classes="ghost small" Content="Delete" Command="{Binding DeleteCommand}" />
+              </StackPanel>
+              <TextBlock Text="LAYERS" Classes="label" VerticalAlignment="Center" />
+            </DockPanel>
+            <ListBox ItemsSource="{Binding Layers}" SelectedItem="{Binding SelectedLayer}" MaxHeight="220">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:LayerItem">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="{Binding Kind}" Classes="faint" FontSize="11" Width="44" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card" Padding="14" IsVisible="{Binding HasSelection}">
+          <StackPanel Spacing="4">
+            <TextBlock Text="WIDGET" Classes="label" Margin="0,0,0,4" />
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+              <AutoCompleteBox ItemsSource="{Binding SensorAliases}" Text="{Binding SelectedSensor}" PlaceholderText="Sensor, e.g. gpu.temp"
+                               FilterMode="Contains" MaxDropDownHeight="320" FontSize="12" />
+              <Button Grid.Column="1" Classes="ghost small" Margin="6,0,0,0" Command="{Binding InsertSensorCommand}" Content="Use sensor"
+                      ToolTip.Tip="Adds the sensor to the selected text, or makes it the value of the selected bar, gauge or graph" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding Properties}" ItemTemplate="{StaticResource FieldTemplate}" />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card" Padding="14">
+          <StackPanel Spacing="4">
+            <DockPanel Margin="0,0,0,4">
+              <Button DockPanel.Dock="Right" Classes="ghost small" Content="Match panel" Command="{Binding MatchPanelCommand}" ToolTip.Tip="Make the canvas the connected panel's size" />
+              <TextBlock Text="SCREEN" Classes="label" VerticalAlignment="Center" />
+            </DockPanel>
+            <ItemsControl ItemsSource="{Binding ScreenFields}" ItemTemplate="{StaticResource FieldTemplate}" />
+            <TextBlock Classes="faint" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"
+                       Text="Colours are #rrggbb, or #rrggbbaa with transparency. Text can show sensors with {@cpu.temp:0}." />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

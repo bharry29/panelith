@@ -40,7 +40,7 @@ sudo dotnet run --project src/Panelith.Cli -- doctor --install-udev-rules
 
 Unplug the panel and plug it back in, then run `devices` again. `doctor` also checks that libusb is installed (`sudo apt install libusb-1.0-0` on Debian and Ubuntu).
 
-On Windows the 6.86" panel uses HID and usually needs nothing extra. The 9.16" and 11.3" panels need a WinUSB driver, which the Thermalright installer sets up. Close TRCC before `run`.
+On Windows the 6.86" panel uses HID and needs nothing extra. The 9.16" and 11.3" panels announce themselves as WinUSB devices, so Windows binds its built-in driver on first plug-in. Close TRCC before `run`.
 
 Rotation defaults to the panel's native orientation, which is already landscape on a Trofeo. Pass `--rotate 90`, `180`, or `270` if the panel is mounted another way.
 
@@ -66,6 +66,9 @@ The solution is .NET 10. Tests do not need a panel. A virtual panel exercises th
 - Themes with sensor aliases (`@cpu.temp`, `@gpu.load`, …), anchors, and fit/fill/stretch.
 - Linux hwmon and /proc sensors, LibreHardwareMonitor and HWiNFO on Windows, and a synthetic source for previews.
 - Reconnect after unplug or sleep, a frame-rate cap, and skipping frames that did not change.
+- A Windows app (`Panelith.exe`) with a dashboard, screen gallery, profiles that switch screens by game or idle time, and a designer for building screens on a live canvas.
+- Video screens and video or picture wallpapers. Videos are cropped, trimmed and baked once into a `.ptclip` file with Windows Media Foundation, so playback costs almost nothing. Videos can also come from YouTube through a bundled yt-dlp.
+- An installer that also sets up PawnIO (for CPU temperatures) and, on Windows N editions, the Media Feature Pack.
 
 Panels that can be recognised but not yet driven (some Turing USB models, BeadaPanel, WeAct) show up in `devices` with an explanation instead of disappearing.
 
