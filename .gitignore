@@ -1,0 +1,32 @@
+# Build output
+bin/
+obj/
+artifacts/
+publish/
+*.user
+*.suo
+*.binlog
+
+# Test output
+TestResults/
+coverage/
+*.coverage
+*.trx
+
+# Snapshot test failures (committed baselines live next to the tests)
+**/__received__/
+
+# IDE
+.vs/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local runtime state (config, logs, captured frames)
+.omnipanel/
+*.log

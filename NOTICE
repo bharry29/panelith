@@ -1,0 +1,56 @@
+OmniPanel
+Copyright (c) OmniPanel contributors
+
+This product includes software developed by the OmniPanel contributors,
+licensed under the Apache License, Version 2.0 (see LICENSE).
+
+================================================================================
+Protocol provenance and clean-room statement
+================================================================================
+
+OmniPanel talks to USB display panels from several vendors. None of these
+vendors publish a protocol specification for the panels in question, with the
+exception of BeadaPanel, which publishes an SDK.
+
+The device protocol implementations in `src/OmniPanel.Devices` were written
+from protocol *descriptions* -- byte layouts, command opcodes, handshake
+sequences and pixel encodings -- that have been published by the hardware
+reverse-engineering community. No source code was copied from any of the
+projects listed below, several of which are GPL-licensed and therefore
+incompatible with this project's Apache-2.0 license. Protocol facts (which byte
+means what) are not themselves copyrightable; the expression of those facts in
+this repository is original.
+
+Projects whose published protocol documentation informed this implementation,
+with thanks:
+
+  * thermalright-lcd-control (Apache-2.0)
+    https://github.com/rejeb/thermalright-lcd-control
+    Documented the Thermalright/TRCC wire families: `ly` bulk, raw `bulk`,
+    HID type 2 and type 3, SCSI/BOT, and the PM/SUB/FBL screen-identification
+    tables used by the TRCC firmware.
+
+  * turing-smart-screen-python (GPL-3.0)
+    https://github.com/mathoudebine/turing-smart-screen-python
+    Documented the Turing Smart Screen revision A/B/C/D serial command sets,
+    the XuanFang variants, and the newer Turing USB bulk protocol.
+
+  * InfoPanel (GPL-3.0)
+    https://github.com/habibrehmansg/infopanel
+    Documented panel behaviour, performance characteristics and the practical
+    failure modes of these devices (see its PANELS.md).
+
+  * liquidctl (GPL-3.0)
+    https://github.com/liquidctl/liquidctl
+    Documented all-in-one cooler LCD protocols.
+
+OmniPanel is not affiliated with, endorsed by, or supported by Thermalright,
+Turing, BeadaPanel, XuanFang, Kipye, WeAct Studio, or any other hardware
+vendor. All trademarks are the property of their respective owners. Vendor and
+model names appear in this project solely to identify hardware compatibility.
+
+================================================================================
+Third-party dependencies
+================================================================================
+
+See docs/third-party-licenses.md for the full dependency license inventory.

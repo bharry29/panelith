@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/OmniPanel.Core/OmniPanel.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OmniPanel.Core.Tests/OmniPanel.Core.Tests.csproj" />
+  </Folder>
+</Solution>
