@@ -21,7 +21,7 @@ public sealed class ThermalrightLyDriverTests
         var panel = Assert.Single(await driver.DiscoverAsync(TestContext.Current.CancellationToken));
 
         Assert.Equal("thermalright.trofeo-vision", panel.Descriptor.ProfileId);
-        Assert.Equal(1280, panel.Descriptor.Width);
+        Assert.Equal(1920, panel.Descriptor.Width);
         Assert.Equal(480, panel.Descriptor.Height);
         Assert.Equal(ThermalrightLyDriver.DriverId, panel.DriverId);
         Assert.Equal("usb:0416:5408:sn=TRV-0001", panel.StableKey);
@@ -55,7 +55,7 @@ public sealed class ThermalrightLyDriverTests
     {
         var bus = new FakeUsbDeviceAccess()
             .With(TrofeoVendor, TrofeoProduct)
-            .Replying(TrofeoVendor, TrofeoProduct, HandshakeReply(rawModel: 4));
+            .Replying(TrofeoVendor, TrofeoProduct, HandshakeReply(rawModel: 1));
 
         var driver = new ThermalrightLyDriver(ContextWith(bus));
         var panel = Assert.Single(await driver.DiscoverAsync(TestContext.Current.CancellationToken));
@@ -67,16 +67,15 @@ public sealed class ThermalrightLyDriverTests
 
         var device = Assert.Single(bus.OpenedBulkDevices);
         Assert.Equal(LyProtocol.BuildHandshake(), device.Writes[0]);
-        Assert.Equal((1280, 480), connection.FrameSize);
+        Assert.Equal((1920, 480), connection.FrameSize);
     }
 
     [Fact]
     public async Task TrustsThePanelOverTheProfileWhenItReportsADifferentSize()
     {
-        // The Trofeo Vision ships at three sizes behind one product id, so the
-        // handshake is the only reliable source of the resolution. A panel that
-        // reports 1920x440 must be driven at 1920x440 even though the profile
-        // says 1280x480.
+        // The 9.16" and the 11.3" share one product id. A handshake whose model
+        // byte is 0x05 is the 11.3" and must be driven at 1920x400 even though
+        // the profile's default is the 9.16" at 1920x480.
         var bus = new FakeUsbDeviceAccess()
             .With(TrofeoVendor, TrofeoProduct)
             .Replying(TrofeoVendor, TrofeoProduct, HandshakeReply(rawModel: 5));
@@ -84,14 +83,14 @@ public sealed class ThermalrightLyDriverTests
         var driver = new ThermalrightLyDriver(ContextWith(bus));
         var panel = Assert.Single(await driver.DiscoverAsync(TestContext.Current.CancellationToken));
 
-        Assert.Equal((1280, 480), (panel.Descriptor.Width, panel.Descriptor.Height));
+        Assert.Equal((1920, 480), (panel.Descriptor.Width, panel.Descriptor.Height));
 
         await using var connection = await driver.OpenAsync(
             panel,
             PanelOpenOptions.Default,
             TestContext.Current.CancellationToken);
 
-        Assert.Equal((1920, 440), connection.FrameSize);
+        Assert.Equal((1920, 400), connection.FrameSize);
     }
 
     [Fact]
@@ -134,7 +133,7 @@ public sealed class ThermalrightLyDriverTests
         var codec = new StubImageCodec { NextSize = 5000 };
         var bus = new FakeUsbDeviceAccess()
             .With(TrofeoVendor, TrofeoProduct)
-            .Replying(TrofeoVendor, TrofeoProduct, HandshakeReply(rawModel: 4));
+            .Replying(TrofeoVendor, TrofeoProduct, HandshakeReply(rawModel: 1));
 
         var driver = new ThermalrightLyDriver(ContextWith(bus, codec));
         var panel = Assert.Single(await driver.DiscoverAsync(TestContext.Current.CancellationToken));
@@ -144,7 +143,7 @@ public sealed class ThermalrightLyDriverTests
             PanelOpenOptions.Default,
             TestContext.Current.CancellationToken);
 
-        using var frame = FrameBuffer.RentCleared(1280, 480);
+        using var frame = FrameBuffer.RentCleared(1920, 480);
         await connection.SendFrameAsync(frame, TestContext.Current.CancellationToken);
 
         var device = Assert.Single(bus.OpenedBulkDevices);
@@ -169,7 +168,7 @@ public sealed class ThermalrightLyDriverTests
     {
         var bus = new FakeUsbDeviceAccess()
             .With(TrofeoVendor, TrofeoProduct)
-            .Replying(TrofeoVendor, TrofeoProduct, HandshakeReply(rawModel: 4));
+            .Replying(TrofeoVendor, TrofeoProduct, HandshakeReply(rawModel: 1));
 
         var driver = new ThermalrightLyDriver(ContextWith(bus));
         var panel = Assert.Single(await driver.DiscoverAsync(TestContext.Current.CancellationToken));
@@ -192,7 +191,7 @@ public sealed class ThermalrightLyDriverTests
     {
         var bus = new FakeUsbDeviceAccess()
             .With(TrofeoVendor, TrofeoProduct)
-            .Replying(TrofeoVendor, TrofeoProduct, HandshakeReply(rawModel: 4));
+            .Replying(TrofeoVendor, TrofeoProduct, HandshakeReply(rawModel: 1));
 
         var driver = new ThermalrightLyDriver(ContextWith(bus));
         var panel = Assert.Single(await driver.DiscoverAsync(TestContext.Current.CancellationToken));
@@ -202,9 +201,9 @@ public sealed class ThermalrightLyDriverTests
             PanelOpenOptions.Default with { Orientation = PanelOrientation.Landscape },
             TestContext.Current.CancellationToken);
 
-        Assert.Equal((480, 1280), connection.FrameSize);
+        Assert.Equal((480, 1920), connection.FrameSize);
 
-        using var frame = FrameBuffer.RentCleared(480, 1280);
+        using var frame = FrameBuffer.RentCleared(480, 1920);
         await connection.SendFrameAsync(frame, TestContext.Current.CancellationToken);
     }
 
@@ -213,7 +212,7 @@ public sealed class ThermalrightLyDriverTests
     {
         var bus = new FakeUsbDeviceAccess()
             .With(TrofeoVendor, TrofeoProduct)
-            .Replying(TrofeoVendor, TrofeoProduct, HandshakeReply(rawModel: 4));
+            .Replying(TrofeoVendor, TrofeoProduct, HandshakeReply(rawModel: 1));
 
         var driver = new ThermalrightLyDriver(ContextWith(bus));
         var panel = Assert.Single(await driver.DiscoverAsync(TestContext.Current.CancellationToken));

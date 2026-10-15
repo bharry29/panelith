@@ -2,11 +2,11 @@
   {
     "id": "thermalright.trofeo-vision",
     "vendor": "Thermalright",
-    "model": "Trofeo Vision (LY)",
-    "aliases": ["Trofeo Vision 6.86", "Trofeo Vision 9.16", "Trofeo Vision 11.3", "TR Trofeo"],
+    "model": "Trofeo Vision 9.16\" / 11.3\" (LY)",
+    "aliases": ["Trofeo Vision 9.16", "Trofeo Vision 11.3", "Trefeo", "TR Trofeo"],
     "driver": "thermalright.ly",
     "usb": [{ "vendor": "0x0416", "product": "0x5408" }],
-    "width": 1280,
+    "width": 1920,
     "height": 480,
     "pixelFormat": "jpeg",
     "transport": "usbBulk",
@@ -22,15 +22,16 @@
       "requiresExclusiveAccess": true
     },
     "support": "untested",
-    "notes": "Resolution is confirmed by handshake, so every Trofeo Vision size (6.86\" 1280x480, 9.16\" 1920x480, 11.3\" 1920x400) is handled by this one profile. Close Thermalright TRCC before use."
+    "notes": "The 9.16\" (1920x480, sometimes reported as 1920x462) and the 11.3\" (1920x400) share this product id; the handshake picks the size. The 6.86\" is a different device (0416:5302) and is not this profile. Close Thermalright TRCC before use."
   },
   {
     "id": "thermalright.trofeo-vision-ly1",
     "vendor": "Thermalright",
-    "model": "Trofeo Vision (LY1 firmware)",
+    "model": "Trofeo Vision 9.16\" (LY1 firmware)",
+    "aliases": ["Trofeo Vision LY1"],
     "driver": "thermalright.ly",
     "usb": [{ "vendor": "0x0416", "product": "0x5409" }],
-    "width": 1280,
+    "width": 1920,
     "height": 480,
     "pixelFormat": "jpeg",
     "transport": "usbBulk",
@@ -40,6 +41,31 @@
     "capabilities": { "maxFramesPerSecond": 15, "requiresExclusiveAccess": true },
     "support": "untested",
     "notes": "The revised firmware revision of the Trofeo Vision. Uses command byte 2 and sends chunks unpadded."
+  },
+  {
+    "id": "thermalright.trofeo-vision-6.86",
+    "vendor": "Thermalright",
+    "model": "Trofeo Vision 6.86\"",
+    "aliases": ["Trefeo 6.86", "Trofeo Vision 1280x480"],
+    "driver": "thermalright.hid",
+    "usb": [{ "vendor": "0x0416", "product": "0x5302" }],
+    "width": 1280,
+    "height": 480,
+    "pixelFormat": "jpeg",
+    "transport": "hid",
+    "probe": "thermalrightHidType2",
+    "jpegQuality": 85,
+    "reportId": 0,
+    "chunkSize": 512,
+    "capabilities": {
+      "supportsBrightness": false,
+      "supportsScreenPower": false,
+      "supportsPartialUpdate": false,
+      "maxFramesPerSecond": 15,
+      "requiresExclusiveAccess": true
+    },
+    "support": "community",
+    "notes": "The standalone 6.86\" panel. It shares 0416:5302 with the Frozen Magic cooler screens; this profile is preferred because it is the panel people install OmniPanel to drive. If a cooler screen is mis-detected, pin thermalright.frozen-magic-hid in omnipanel.json. Close Thermalright TRCC before use."
   },
   {
     "id": "thermalright.frozen-magic-hid",

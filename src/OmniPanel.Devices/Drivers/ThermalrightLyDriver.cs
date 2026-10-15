@@ -111,6 +111,15 @@ public sealed class ThermalrightLyDriver : UsbProfileDriver
                     PanelFailureReason.ProtocolError);
             }
 
+            // The Trofeo-specific reading comes first. The shared PM/SUB table
+            // describes the cooler screens and reports the wrong height for
+            // these panels, so it is only a fallback for a reply this reader
+            // does not recognise.
+            if (TrofeoLyGeometry.FromHandshake(reply) is { } reported)
+            {
+                return ApplyReportedSize(profile, assumed, reported.Width, reported.Height);
+            }
+
             var (panelModel, subModel) = TrccScreenTable.ReadLyIdentity(reply, productId);
             if (TrccScreenTable.ResolveModel(panelModel, subModel) is not { } screen)
             {
@@ -125,25 +134,30 @@ public sealed class ThermalrightLyDriver : UsbProfileDriver
                 return assumed;
             }
 
-            if (screen.Width == assumed.Width && screen.Height == assumed.Height)
-            {
-                return assumed;
-            }
-
-            Logger.LogInformation(
-                "{Panel} reports {Width}x{Height}, overriding the profile's {ProfileWidth}x{ProfileHeight}.",
-                profile.FullName,
-                screen.Width,
-                screen.Height,
-                assumed.Width,
-                assumed.Height);
-
-            return assumed with { Width = screen.Width, Height = screen.Height };
+            return ApplyReportedSize(profile, assumed, screen.Width, screen.Height);
         }
         finally
         {
             ArrayPool<byte>.Shared.Return(response);
         }
+    }
+
+    private PanelDescriptor ApplyReportedSize(PanelProfile profile, PanelDescriptor assumed, int width, int height)
+    {
+        if (width == assumed.Width && height == assumed.Height)
+        {
+            return assumed;
+        }
+
+        Logger.LogInformation(
+            "{Panel} reports {Width}x{Height}, overriding the profile's {ProfileWidth}x{ProfileHeight}.",
+            profile.FullName,
+            width,
+            height,
+            assumed.Width,
+            assumed.Height);
+
+        return assumed with { Width = width, Height = height };
     }
 }
 
