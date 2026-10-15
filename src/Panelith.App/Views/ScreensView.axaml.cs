@@ -32,6 +32,40 @@ public sealed partial class ScreensView : UserControl
         }
     }
 
+    private async void NewYouTubeScreen(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not ScreensViewModel screens || !OperatingSystem.IsWindows() || TopLevel.GetTopLevel(this) is not Window owner)
+        {
+            return;
+        }
+
+        var folder = Path.Combine(Path.GetTempPath(), "Panelith", "download-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            if (await YouTubePrompt.AskAsync(owner, screens.Service.Runtime.Paths, folder) is { } download
+                && await MediaImportWindow.ShowAsync(owner, new MediaImportViewModel(screens.Service, download.File, wallpaperFor: null) { Name = download.Title ?? "YouTube video" }) is { } id)
+            {
+                screens.ShowNew(id);
+            }
+        }
+        finally
+        {
+            try
+            {
+                if (Directory.Exists(folder))
+                {
+                    Directory.Delete(folder, recursive: true);
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+    }
+
     private async void SetWallpaper(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not ScreensViewModel screens || (sender as Control)?.Tag is not ScreenCardViewModel card || !OperatingSystem.IsWindows())

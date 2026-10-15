@@ -36,9 +36,93 @@ public static class WindowsIntegration
     /// <summary>The official PawnIO site.</summary>
     public const string PawnIOUrl = "https://pawnio.eu/";
 
+    /// <summary>The official PawnIO setup that ships with Panelith, or null when this build has none.</summary>
+    public static string? BundledPawnIOSetup =>
+        Path.Combine(AppContext.BaseDirectory, "tools", "PawnIO_setup.exe") is var path && File.Exists(path) ? path : null;
+
+    /// <summary>
+    /// Installs PawnIO with the bundled setup, asking Windows for permission
+    /// when Panelith is not elevated. Opens the PawnIO site when no setup is
+    /// bundled. Returns a problem to show, or null.
+    /// </summary>
+    public static async Task<string?> InstallPawnIOAsync()
+    {
+        if (BundledPawnIOSetup is not { } setup)
+        {
+            Process.Start(new ProcessStartInfo(PawnIOUrl) { UseShellExecute = true });
+            return "The PawnIO setup is not included in this copy of Panelith, so its site was opened instead.";
+        }
+
+        try
+        {
+            var start = new ProcessStartInfo(setup, "-install -silent") { UseShellExecute = true };
+            if (!IsElevated)
+            {
+                start.Verb = "runas";
+            }
+
+            using var process = Process.Start(start);
+            if (process is null)
+            {
+                return "The PawnIO setup did not start.";
+            }
+
+            await process.WaitForExitAsync().ConfigureAwait(true);
+            return process.ExitCode == 0 ? null : $"The PawnIO setup stopped with code {process.ExitCode}.";
+        }
+        catch (Win32Exception)
+        {
+            return "Windows did not get permission to install PawnIO.";
+        }
+    }
+
+    /// <summary>Whether Windows Media Foundation, which video screens need, is missing (Windows N editions).</summary>
+    public static bool IsMediaFoundationMissing =>
+        OperatingSystem.IsWindows() && !File.Exists(Path.Combine(Environment.SystemDirectory, "mfplat.dll"));
+
+    /// <summary>
+    /// Adds the Windows Media Feature Pack, asking for permission. Returns a
+    /// problem to show, or null. Windows may need a restart before videos work.
+    /// </summary>
+    public static async Task<string?> AddMediaFeaturePackAsync()
+    {
+        try
+        {
+            var start = new ProcessStartInfo(
+                Path.Combine(Environment.SystemDirectory, "dism.exe"),
+                "/Online /Add-Capability /CapabilityName:Media.MediaFeaturePack~~~~0.0.1.0 /NoRestart /Quiet")
+            {
+                UseShellExecute = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+            };
+            if (!IsElevated)
+            {
+                start.Verb = "runas";
+            }
+
+            using var process = Process.Start(start);
+            if (process is null)
+            {
+                return "Windows could not start adding the Media Feature Pack.";
+            }
+
+            await process.WaitForExitAsync().ConfigureAwait(true);
+            return process.ExitCode switch
+            {
+                0 => null,
+                3010 => "The Media Feature Pack was added. Restart Windows to finish.",
+                _ => $"Adding the Media Feature Pack stopped with code {process.ExitCode}. It can also be added in Settings, Apps, Optional features.",
+            };
+        }
+        catch (Win32Exception)
+        {
+            return "Windows did not get permission to add the Media Feature Pack.";
+        }
+    }
+
     /// <summary>
     /// Whether the PawnIO driver is installed. LibreHardwareMonitor reads CPU
-    /// temperature, clocks and power through it; Panelith never installs it.
+    /// temperature, clocks and power through it.
     /// </summary>
     public static bool IsPawnIOInstalled()
     {

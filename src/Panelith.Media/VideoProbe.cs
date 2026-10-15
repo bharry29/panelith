@@ -22,7 +22,7 @@ public static class VideoProbe
     /// </summary>
     public static VideoProbeResult Probe(string source, TimeSpan at, string previewJpeg)
     {
-        using var decoder = MediaFoundationDecoder.Open(source);
+        using var decoder = MediaFoundationDecoder.Open(PreparedSource.Resolve(source));
         var scale = Math.Min(1d, PreviewSize / (double)Math.Max(decoder.Width, decoder.Height));
         var width = Math.Max(1, (int)Math.Round(decoder.Width * scale));
         var height = Math.Max(1, (int)Math.Round(decoder.Height * scale));

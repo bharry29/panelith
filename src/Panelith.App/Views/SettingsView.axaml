@@ -101,11 +101,19 @@
             <TextBlock Text="{Binding ElevationText}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,16,0" />
           </DockPanel>
           <DockPanel IsVisible="{Binding ShowPawnIO}">
-            <Button DockPanel.Dock="Right" Content="Get PawnIO" Command="{Binding OpenPawnIOCommand}" IsVisible="{Binding PawnIOMissing}"
+            <Button DockPanel.Dock="Right" Content="Install PawnIO" Command="{Binding InstallPawnIOCommand}" IsVisible="{Binding PawnIOMissing}"
                     VerticalAlignment="Center" Margin="16,0,0,0" />
             <StackPanel Spacing="2">
               <TextBlock Text="Hardware access driver" FontWeight="SemiBold" />
               <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding PawnIOText}" />
+            </StackPanel>
+          </DockPanel>
+          <DockPanel IsVisible="{Binding MediaFeaturePackMissing}">
+            <Button DockPanel.Dock="Right" Content="Add Media Feature Pack" Command="{Binding AddMediaFeaturePackCommand}"
+                    VerticalAlignment="Center" Margin="16,0,0,0" />
+            <StackPanel Spacing="2">
+              <TextBlock Text="Video support" FontWeight="SemiBold" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding MediaFeaturePackText}" />
             </StackPanel>
           </DockPanel>
           <Grid ColumnDefinitions="*,Auto">

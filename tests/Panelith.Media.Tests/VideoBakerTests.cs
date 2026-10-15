@@ -8,6 +8,8 @@ namespace Panelith.Media;
 public sealed class VideoBakerTests : IDisposable
 {
     private static readonly Guid H264 = new("34363248-0000-0010-8000-00AA00389B71");
+    private static readonly Guid TranscodeContainerType = new("150FF23F-4ABC-478B-AC4F-E1916FBA1CCA");
+    private static readonly Guid FragmentedMp4 = new("9BA876F1-419F-4B77-A1E0-35959D9D4004");
     private static readonly SKColor[] Colours = [SKColors.Red, SKColors.Lime, SKColors.Blue];
 
     private readonly string _folder = Path.Combine(Path.GetTempPath(), "panelith-bake-" + Guid.NewGuid().ToString("N"));
@@ -24,13 +26,19 @@ public sealed class VideoBakerTests : IDisposable
     }
 
     /// <summary>Three seconds at 30 fps, 320x192: a second each of red, green and blue.</summary>
-    private static void WriteTestVideo(string path)
+    private static void WriteTestVideo(string path, bool fragmented = false)
     {
         const int width = 320, height = 192, fps = 30;
         MediaFactory.MFStartup();
         try
         {
-            using var writer = MediaFactory.MFCreateSinkWriterFromURL(path, null, null);
+            using var attributes = MediaFactory.MFCreateAttributes(1);
+            if (fragmented)
+            {
+                attributes.Set(TranscodeContainerType, FragmentedMp4);
+            }
+
+            using var writer = MediaFactory.MFCreateSinkWriterFromURL(path, null, attributes);
             using (var output = MediaFactory.MFCreateMediaType())
             {
                 output.Set(MediaTypeAttributeKeys.MajorType, MediaTypeGuids.Video);
@@ -119,6 +127,28 @@ public sealed class VideoBakerTests : IDisposable
         AssertMostly(SKColors.Lime, Centre(reader, 22));
         AssertMostly(SKColors.Blue, Centre(reader, info.FrameCount - 3));
         Assert.False(File.Exists(output + ".partial"));
+    }
+
+    [Fact]
+    public void AFragmentedMp4IsRewrittenAndBakes()
+    {
+        Assert.SkipUnless(File.Exists(_video), "Media Foundation is not available.");
+        var fragmented = Path.Combine(_folder, "fragmented.mp4");
+        WriteTestVideo(fragmented, fragmented: true);
+        Assert.True(Mp4Defragmenter.IsFragmented(fragmented));
+        Assert.False(Mp4Defragmenter.IsFragmented(_video));
+
+        var plain = Path.Combine(_folder, "plain.mp4");
+        Mp4Defragmenter.Defragment(fragmented, plain, TestContext.Current.CancellationToken);
+        Assert.False(Mp4Defragmenter.IsFragmented(plain));
+
+        var output = Path.Combine(_folder, "fragmented.ptclip");
+        var info = VideoBaker.Bake(new BakeRequest(fragmented, output, 64, 64, LoopCrossfade: false), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.InRange(info.FrameCount, 44, 46);
+        using var reader = ClipReader.Open(output);
+        AssertMostly(SKColors.Red, Centre(reader, 2));
+        AssertMostly(SKColors.Blue, Centre(reader, info.FrameCount - 3));
+        PreparedSource.Clear();
     }
 
     [Fact]

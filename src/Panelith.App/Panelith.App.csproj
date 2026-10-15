@@ -31,6 +31,8 @@
   <ItemGroup>
     <AvaloniaResource Include="Assets/**" />
     <Content Include="../../themes/**/*" CopyToOutputDirectory="PreserveNewest" LinkBase="themes" />
+    <!-- yt-dlp, QuickJS-ng and the PawnIO setup, fetched and hash-checked by build/fetch-tools.ps1. -->
+    <Content Include="../../artifacts/tools/*.exe" CopyToOutputDirectory="PreserveNewest" LinkBase="tools" />
   </ItemGroup>
 
 </Project>

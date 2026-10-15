@@ -256,7 +256,7 @@
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <WrapPanel>
-                      <TextBox Text="{Binding NewApp}" Watermark="Name, e.g. Resolve or vegas*" Width="220" Margin="0,0,8,8" KeyDown="OnNewAppKeyDown" />
+                      <TextBox Text="{Binding NewApp}" PlaceholderText="Name, e.g. Resolve or vegas*" Width="220" Margin="0,0,8,8" KeyDown="OnNewAppKeyDown" />
                       <Button Classes="ghost" Content="Add" Command="{Binding AddAppCommand}" CommandParameter="{x:Null}" Margin="0,0,8,8" />
                       <ComboBox ItemsSource="{Binding RunningApps}" SelectedItem="{Binding RunningAppToAdd}" PlaceholderText="Running now…" Width="190" Margin="0,0,8,8"
                                 DropDownOpened="OnRunningAppsOpened" />
@@ -319,7 +319,7 @@
                   <StackPanel Spacing="6">
                     <TextBlock Text="Shortcut" FontWeight="SemiBold" />
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBox Text="{Binding Hotkey}" Watermark="Click, then press e.g. Ctrl+Alt+1" Width="240" KeyDown="OnHotkeyKeyDown" />
+                      <TextBox Text="{Binding Hotkey}" PlaceholderText="Click, then press e.g. Ctrl+Alt+1" Width="240" KeyDown="OnHotkeyKeyDown" />
                       <Button Classes="ghost" Content="Clear" Command="{Binding ClearHotkeyCommand}" />
                     </StackPanel>
                     <TextBlock Classes="muted" FontSize="12" Text="Pins this profile from anywhere. Press it again to go back to automatic." />

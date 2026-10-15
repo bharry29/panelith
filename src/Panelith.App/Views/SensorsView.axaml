@@ -19,7 +19,7 @@
 
   <Grid RowDefinitions="Auto,Auto,*" Margin="28,22,28,0">
     <DockPanel Grid.Row="0" Margin="0,0,0,16">
-      <TextBox DockPanel.Dock="Right" Width="300" Watermark="Filter, e.g. gpu or temp" Text="{Binding Filter}" VerticalAlignment="Center" />
+      <TextBox DockPanel.Dock="Right" Width="300" PlaceholderText="Filter, e.g. gpu or temp" Text="{Binding Filter}" VerticalAlignment="Center" />
       <StackPanel Spacing="4">
         <TextBlock Text="Sensors" Classes="h1" />
         <TextBlock Text="{Binding Summary}" Classes="muted" />

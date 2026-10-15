@@ -16,7 +16,7 @@ public static class VideoBaker
         ArgumentNullException.ThrowIfNull(request);
         request.Validate();
 
-        using var decoder = MediaFoundationDecoder.Open(request.Source);
+        using var decoder = MediaFoundationDecoder.Open(PreparedSource.Resolve(request.Source, cancellationToken));
         var end = request.End ?? decoder.Duration;
         var longest = request.Start + request.MaxLength;
         if (end is null || end > longest)

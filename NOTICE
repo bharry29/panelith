@@ -69,6 +69,31 @@ Lesser General Public License, version 2.1, and is loaded dynamically; you may
 replace the DLL with your own build. Source: https://github.com/libusb/libusb.
 
 ================================================================================
+Bundled programs
+================================================================================
+
+Windows builds include these programs, unmodified from their official releases
+and run as separate processes. build/fetch-tools.ps1 pins each version and
+checks it against the SHA-256 its project published.
+
+  * yt-dlp (The Unlicense), downloads YouTube videos for video screens.
+    https://github.com/yt-dlp/yt-dlp
+    Users are responsible for only downloading videos they have the right to
+    use; Panelith shows this notice before the first download.
+
+  * QuickJS-ng (MIT), the JavaScript runtime yt-dlp needs for YouTube.
+    Copyright (c) 2017-2024 Fabrice Bellard, Charlie Gordon, and the
+    QuickJS-ng contributors. https://github.com/quickjs-ng/quickjs
+
+  * PawnIO setup (GNU General Public License, version 2), the signed
+    hardware-access driver LibreHardwareMonitor reads CPU sensors through.
+    Installed only when the user ticks it in the installer or presses
+    "Install PawnIO". Source: https://github.com/namazso/PawnIO
+
+Video decoding uses Windows Media Foundation, part of Windows, through
+Vortice.MediaFoundation (MIT).
+
+================================================================================
 Third-party dependencies
 ================================================================================
 

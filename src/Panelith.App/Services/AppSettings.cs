@@ -37,6 +37,9 @@ public sealed record AppSettings
 
     /// <summary>The global shortcut that steps through profiles, or empty for none.</summary>
     public string NextProfileHotkey { get; init; } = "Ctrl+Alt+P";
+
+    /// <summary>Whether the user has read and accepted the note about downloading YouTube videos.</summary>
+    public bool YouTubeAccepted { get; init; }
 }
 
 /// <summary>Reads and writes <c>app.json</c> next to panelith.json.</summary>

@@ -63,6 +63,7 @@ SignedUninstaller=yes
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "pawnio"; Description: "Install the PawnIO driver, so CPU temperature, clocks and power can be read"; GroupDescription: "Hardware access:"; Check: not IsPawnIOInstalled
 
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -80,7 +81,14 @@ Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
 [Run]
+Filename: "{app}\tools\PawnIO_setup.exe"; Parameters: "-install -silent"; StatusMsg: "Installing the PawnIO driver..."; Tasks: pawnio; Flags: waituntilterminated
+; Windows N editions ship without Media Foundation, which video screens need.
+Filename: "{sys}\dism.exe"; Parameters: "/Online /Add-Capability /CapabilityName:Media.MediaFeaturePack~~~~0.0.1.0 /NoRestart /Quiet"; StatusMsg: "Adding the Windows Media Feature Pack for video screens..."; Check: IsMediaFoundationMissing; Flags: runhidden waituntilterminated
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent runasoriginaluser
+
+[UninstallDelete]
+; The copy of yt-dlp that "Update downloader" keeps for this user.
+Type: filesandordirs; Name: "{localappdata}\{#AppName}\tools"
 
 [UninstallRun]
 ; Remove start at sign-in in both forms the app creates, so nothing points at
@@ -93,6 +101,17 @@ function RunHidden(const FileName, Parameters: String): Integer;
 begin
   if not Exec(ExpandConstant(FileName), Parameters, '', SW_HIDE, ewWaitUntilTerminated, Result) then
     Result := -1;
+end;
+
+function IsPawnIOInstalled(): Boolean;
+begin
+  Result := RegKeyExists(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PawnIO') or
+    RegKeyExists(HKLM, 'SYSTEM\CurrentControlSet\Services\PawnIO');
+end;
+
+function IsMediaFoundationMissing(): Boolean;
+begin
+  Result := not FileExists(ExpandConstant('{sys}\mfplat.dll'));
 end;
 
 procedure StopPanelith();

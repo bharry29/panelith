@@ -190,14 +190,46 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public bool ShowPawnIO => WindowsIntegration.IsSupported;
 
-    public bool PawnIOMissing { get; } = WindowsIntegration.IsSupported && !WindowsIntegration.IsPawnIOInstalled();
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PawnIOText))]
+    public partial bool PawnIOMissing { get; set; } = WindowsIntegration.IsSupported && !WindowsIntegration.IsPawnIOInstalled();
 
-    public string PawnIOText => PawnIOMissing
-        ? "The PawnIO driver is not installed. On most CPUs it is what lets Panelith read CPU temperature, clocks and power. Panelith never installs drivers itself. Some anti-cheat software is strict about hardware-access drivers, so check your games' rules first."
-        : "The PawnIO driver is installed. CPU temperature, clocks and power are read through it while Panelith runs as administrator.";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PawnIOText))]
+    public partial string? PawnIOProblem { get; set; }
 
+    public string PawnIOText => PawnIOProblem
+        ?? (PawnIOMissing
+            ? "The PawnIO driver is not installed. On most CPUs it is what lets Panelith read CPU temperature, clocks and power. Install PawnIO sets up the signed driver that comes with Panelith; Windows asks for permission. Some anti-cheat software is strict about hardware-access drivers, so check your games' rules first."
+            : "The PawnIO driver is installed. CPU temperature, clocks and power are read through it while Panelith runs as administrator.");
+
+    [ObservableProperty]
+    public partial bool MediaFeaturePackMissing { get; set; } = WindowsIntegration.IsMediaFoundationMissing;
+
+    [ObservableProperty]
+    public partial string MediaFeaturePackText { get; set; } =
+        "This edition of Windows has no Media Foundation, which video screens and video wallpapers need. Adding the free Media Feature Pack fixes that; Windows asks for permission.";
+
+    /// <summary>Adds the Windows Media Feature Pack, for Windows N editions.</summary>
     [RelayCommand]
-    private void OpenPawnIO() => Process.Start(new ProcessStartInfo(WindowsIntegration.PawnIOUrl) { UseShellExecute = true });
+    private async Task AddMediaFeaturePackAsync()
+    {
+        var problem = await WindowsIntegration.AddMediaFeaturePackAsync();
+        MediaFeaturePackText = problem ?? "The Media Feature Pack was added. Restart Windows if videos still do not open.";
+    }
+
+    /// <summary>Runs the PawnIO setup that ships with Panelith, or opens its site when this build has none.</summary>
+    [RelayCommand]
+    private async Task InstallPawnIOAsync()
+    {
+        PawnIOProblem = null;
+        var result = await WindowsIntegration.InstallPawnIOAsync();
+        PawnIOMissing = !WindowsIntegration.IsPawnIOInstalled();
+        if (PawnIOMissing)
+        {
+            PawnIOProblem = result ?? "PawnIO was not installed.";
+        }
+    }
 
     public bool CanElevate => WindowsIntegration.IsSupported && !WindowsIntegration.IsElevated;
 

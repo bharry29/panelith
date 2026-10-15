@@ -3,7 +3,8 @@
     Publishes Panelith for Windows, optionally signs it, and builds the installer.
 
 .DESCRIPTION
-    1. dotnet publish of the desktop app, self-contained for win-x64, to artifacts\publish\app.
+    1. dotnet publish of the desktop app, self-contained for win-x64, to artifacts\publish\app,
+       with the bundled tools that build\fetch-tools.ps1 downloads and checks.
     2. Code signing, when a certificate is configured (see below).
     3. The Inno Setup installer, to artifacts\installer, when ISCC.exe is available.
 
@@ -38,6 +39,8 @@ if (-not $Version) {
     [xml] $props = Get-Content (Join-Path $root 'Directory.Build.props')
     $Version = $props.SelectSingleNode('//VersionPrefix').InnerText
 }
+
+& (Join-Path $PSScriptRoot 'fetch-tools.ps1')
 
 Write-Host "Publishing Panelith $Version ($Configuration, $Runtime)"
 if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }

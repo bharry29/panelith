@@ -9,7 +9,13 @@
 
       <DockPanel Margin="0,0,16,0">
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-          <Button Classes="accent" Click="NewVideoScreen" ToolTip.Tip="Make a screen that loops a video from this PC, cropped to the panel">
+          <Button Classes="accent" ToolTip.Tip="Make a screen that loops a video, cropped to the panel">
+            <Button.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedRight">
+                <MenuItem Header="From a video on this PC..." Click="NewVideoScreen" />
+                <MenuItem Header="From YouTube..." Click="NewYouTubeScreen" />
+              </MenuFlyout>
+            </Button.Flyout>
             <StackPanel Orientation="Horizontal" Spacing="8">
               <PathIcon Data="{x:Static vm:Icons.Play}" Width="14" Height="14" />
               <TextBlock Text="New video screen" />

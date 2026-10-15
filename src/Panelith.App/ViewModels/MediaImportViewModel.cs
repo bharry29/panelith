@@ -321,6 +321,7 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         _work?.Cancel();
         _previewDelay?.Cancel();
         Preview?.Dispose();
+        PreparedSource.Clear();
         try
         {
             if (Directory.Exists(_previewFolder))
