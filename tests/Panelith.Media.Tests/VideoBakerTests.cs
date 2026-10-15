@@ -130,6 +130,40 @@ public sealed class VideoBakerTests : IDisposable
     }
 
     [Fact]
+    public void ABakedClipExportsToAnMp4ThatPlaysBack()
+    {
+        Assert.SkipUnless(File.Exists(_video), "Media Foundation is not available.");
+        var clip = Path.Combine(_folder, "out.ptclip");
+        var mp4 = Path.Combine(_folder, "out.mp4");
+        var info = VideoBaker.Bake(new BakeRequest(_video, clip, 192, 48, LoopCrossfade: false), cancellationToken: TestContext.Current.CancellationToken);
+
+        var written = ClipExporter.Export(clip, mp4, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(info.FrameCount, written);
+        Assert.False(File.Exists(Path.Combine(_folder, "out.partial.mp4")));
+        using var decoder = MediaFoundationDecoder.Open(mp4);
+        Assert.Equal(192, decoder.Width);
+        Assert.Equal(48, decoder.Height);
+        using var bitmap = new SKBitmap(192, 48, SKColorType.Bgra8888, SKAlphaType.Premul);
+        var frames = 0;
+        var first = SKColors.Empty;
+        var last = SKColors.Empty;
+        while (decoder.Next() is { } frame)
+        {
+            using (frame)
+            {
+                frame.CopyTo(bitmap);
+                last = bitmap.GetPixel(96, 24);
+                first = frames++ == 0 ? last : first;
+            }
+        }
+
+        Assert.InRange(frames, info.FrameCount - 2, info.FrameCount);
+        AssertMostly(SKColors.Red, first);
+        AssertMostly(SKColors.Blue, last);
+    }
+
+    [Fact]
     public void OnlyTheVisiblePartOfAPaddedPictureIsDecoded()
     {
         Assert.SkipUnless(File.Exists(_video), "Media Foundation is not available.");

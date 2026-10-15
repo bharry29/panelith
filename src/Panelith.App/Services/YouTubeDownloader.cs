@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
+using Panelith.Media;
 
 namespace Panelith.App.Services;
 
@@ -16,8 +18,19 @@ public static partial class YouTubeDownloader
     /// <summary>How long a download may take before it is stopped.</summary>
     public static readonly TimeSpan Timeout = TimeSpan.FromMinutes(15);
 
-    /// <summary>H.264 in MP4 first, which every Windows can decode; then any MP4 video.</summary>
-    private const string Format = "bv*[vcodec^=avc1][ext=mp4][height<=1440]/bv*[ext=mp4][height<=1440]";
+    /// <summary>
+    /// The sharpest MP4 Windows can decode, up to 4K. YouTube only offers H.264
+    /// up to 1080p; above that it is AV1, which needs the AV1 Video Extension.
+    /// </summary>
+    private const string Av1First =
+        "bv*[vcodec^=av01][ext=mp4][height<=2160]" + Fits + "/bv*[vcodec^=av01][ext=mp4][height<=1440]" + Fits + "/" + H264Only;
+
+    /// <summary>H.264 in MP4, which every Windows can decode.</summary>
+    private const string H264Only =
+        "bv*[vcodec^=avc1][ext=mp4][height<=2160]" + Fits + "/bv*[vcodec^=avc1][ext=mp4][height<=720]/bv*[ext=mp4][vcodec!^=vp][vcodec!^=av01]";
+
+    /// <summary>Skips streams that would go over <see cref="MaxFileSize"/>; streams of unknown size are tried.</summary>
+    private const string Fits = "[filesize<?1900M][filesize_approx<?1900M]";
 
     private static readonly string[] Hosts = ["youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be", "www.youtu.be"];
 
@@ -85,14 +98,41 @@ public static partial class YouTubeDownloader
     }
 
     /// <summary>
-    /// Downloads <paramref name="url"/> into <paramref name="folder"/> and
-    /// returns the file and the video's title. Progress is reported from 0 to 1.
+    /// Downloads <paramref name="url"/> and returns the file, kept in
+    /// <see cref="MediaFolders.Downloads"/>, and the video's title. A video
+    /// downloaded before is reused. <paramref name="folder"/> is scratch space
+    /// for the download in progress. Progress is reported from 0 to 1.
     /// Cancelling stops yt-dlp.
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public static async Task<(string File, string? Title)> DownloadAsync(Uri url, string folder, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(url);
         var safe = ParseVideoUrl(url.ToString()) ?? throw new ArgumentException("Only single YouTube videos can be downloaded.", nameof(url));
+        var id = QueryValue(safe.Query, "v")!;
+        var tag = $" [{id}]";
+        if (Directory.Exists(MediaFolders.Downloads)
+            && Directory.EnumerateFiles(MediaFolders.Downloads, "*" + tag + ".mp4").FirstOrDefault() is { } kept)
+        {
+            progress?.Report(1d);
+            var name = Path.GetFileNameWithoutExtension(kept);
+            return (kept, name[..^tag.Length]);
+        }
+
+        var (file, title) = await DownloadToAsync(safe, folder, progress, cancellationToken).ConfigureAwait(false);
+        Directory.CreateDirectory(MediaFolders.Downloads);
+        var target = Path.Combine(MediaFolders.Downloads, MediaFolders.SafeName(title ?? id) + tag + ".mp4");
+        File.Move(file, target, overwrite: true);
+        return (target, title);
+    }
+
+    /// <summary>Whether downloads prefer AV1, for sizes above 1080p.</summary>
+    [SupportedOSPlatform("windows")]
+    public static bool PrefersAv1 => MediaFoundationDecoder.CanDecodeAv1;
+
+    [SupportedOSPlatform("windows")]
+    private static async Task<(string File, string? Title)> DownloadToAsync(Uri safe, string folder, IProgress<double>? progress, CancellationToken cancellationToken)
+    {
         var exe = Executable ?? throw new InvalidOperationException("This copy of Panelith has no video downloader. Reinstall Panelith to get it back.");
         var quickJs = QuickJs ?? throw new InvalidOperationException("The JavaScript runtime the downloader needs is missing. Reinstall Panelith to get it back.");
         Directory.CreateDirectory(folder);
@@ -109,7 +149,7 @@ public static partial class YouTubeDownloader
         {
             "--ignore-config", "--no-update", "--no-js-runtimes", "--js-runtimes", "quickjs:" + quickJs,
             "--no-playlist", "--no-part", "--no-mtime", "--no-cache-dir", "--max-filesize", MaxFileSize,
-            "-f", Format, "-P", folder, "-o", "video.%(ext)s",
+            "-f", PrefersAv1 ? Av1First : H264Only, "-P", folder, "-o", "video.%(ext)s",
             "--newline", "--progress", "--progress-template", "download:progress %(progress._percent_str)s",
             "--print", "after_move:title:%(title).80s", "--print", "after_move:filepath", "--", safe.ToString(),
         })

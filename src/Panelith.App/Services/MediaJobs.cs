@@ -19,6 +19,7 @@ public static class MediaJobs
 {
     internal const string BakeArgument = "--bake-video";
     internal const string ProbeArgument = "--probe-video";
+    internal const string ExportArgument = "--export-video";
 
     private static readonly CultureInfo C = CultureInfo.InvariantCulture;
 
@@ -66,14 +67,21 @@ public static class MediaJobs
         return new VideoProbeResult(int.Parse(result[0], C), int.Parse(result[1], C), duration > 0 ? TimeSpan.FromTicks(duration) : null);
     }
 
+    /// <summary>Writes a baked clip out as an MP4 in a child process.</summary>
+    public static async Task ExportAsync(string clip, string mp4, double speed, CancellationToken cancellationToken)
+    {
+        await RunAsync([ExportArgument, clip, mp4, speed.ToString("R", C)], null, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
-    /// Handles a <see cref="BakeArgument"/> or <see cref="ProbeArgument"/>
-    /// command line in the child. Returns false when the arguments are neither.
+    /// Handles a <see cref="BakeArgument"/>, <see cref="ProbeArgument"/> or
+    /// <see cref="ExportArgument"/> command line in the child. Returns false
+    /// when the arguments are none of them.
     /// </summary>
     public static bool TryRunChild(string[] args, out int exitCode)
     {
         exitCode = 0;
-        if (args.Length == 0 || (args[0] != BakeArgument && args[0] != ProbeArgument))
+        if (args.Length == 0 || (args[0] != BakeArgument && args[0] != ProbeArgument && args[0] != ExportArgument))
         {
             return false;
         }
@@ -134,6 +142,11 @@ public static class MediaJobs
                     }),
                     cancel.Token);
                 output.WriteLine($"done {info.FrameCount.ToString(C)}");
+            }
+            else if (args[0] == ExportArgument && args.Length == 4)
+            {
+                var frames = ClipExporter.Export(args[1], args[2], double.Parse(args[3], C), cancellationToken: cancel.Token);
+                output.WriteLine($"done {frames.ToString(C)}");
             }
             else
             {

@@ -19,9 +19,13 @@
 
     <!-- Buttons -->
     <DockPanel DockPanel.Dock="Bottom" Margin="0,16,0,0">
-      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="10">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsEditing}">
         <Button Content="Cancel" Command="{Binding CancelCommand}" />
         <Button Classes="accent" Command="{Binding CreateCommand}" Content="{Binding CreateLabel}" />
+      </StackPanel>
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsReviewing}">
+        <Button Content="Back to editing" Command="{Binding BackCommand}" ToolTip.Tip="Throws this version away so you can change the part, length or speed" />
+        <Button Classes="accent" Content="Show on panel" Command="{Binding AcceptCommand}" />
       </StackPanel>
       <StackPanel Spacing="6" VerticalAlignment="Center" Margin="0,0,16,0">
         <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding !ProgressKnown}" IsVisible="{Binding IsBusy}" Minimum="0" Maximum="100" />
@@ -30,7 +34,31 @@
       </StackPanel>
     </DockPanel>
 
-    <ScrollViewer>
+    <Grid>
+    <!-- Review: the finished screen, playing -->
+    <ScrollViewer IsVisible="{Binding IsReviewing}">
+      <StackPanel Spacing="16">
+        <Border Background="#000000" CornerRadius="10" Padding="6">
+          <c:FrameView Frame="{Binding ResultFrame}" AspectRatio="{Binding PanelAspect}" Radius="5" MaxHeight="420" />
+        </Border>
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <TextBlock Text="Saved on this PC" FontWeight="SemiBold" />
+            <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto" RowSpacing="8">
+              <TextBlock Text="Downloaded video" Classes="muted" IsVisible="{Binding DownloadedFile, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              <SelectableTextBlock Grid.Column="1" Text="{Binding DownloadedFile}" TextWrapping="Wrap" FontSize="12"
+                                   IsVisible="{Binding DownloadedFile, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              <TextBlock Grid.Row="1" Text="Screen video" Classes="muted" IsVisible="{Binding ExportedFile, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              <SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ExportedFile}" TextWrapping="Wrap" FontSize="12"
+                                   IsVisible="{Binding ExportedFile, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            </Grid>
+            <Button Classes="ghost" Content="Open the Panelith videos folder" Command="{Binding OpenVideosFolderCommand}" HorizontalAlignment="Left" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+
+    <ScrollViewer IsVisible="{Binding IsEditing}">
       <StackPanel Spacing="16" IsEnabled="{Binding IsIdle}">
         <Border Background="#000000" CornerRadius="10" Padding="6">
           <c:CropBox Source="{Binding Preview}" Crop="{Binding Crop}" TargetAspect="{Binding PanelAspect}" MaxHeight="420" />
@@ -87,5 +115,6 @@
         </Border>
       </StackPanel>
     </ScrollViewer>
+    </Grid>
   </DockPanel>
 </Window>

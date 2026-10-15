@@ -1,12 +1,17 @@
 using System.Globalization;
 using System.Runtime.Versioning;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using Panelith.App.Controls;
 using Panelith.App.Services;
 using Panelith.Hosting;
+using Panelith.Imaging;
 using Panelith.Media;
+using Panelith.Rendering;
+using Panelith.Themes;
 
 namespace Panelith.App.ViewModels;
 
@@ -25,12 +30,20 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
 
     private static readonly TimeSpan DefaultLength = TimeSpan.FromSeconds(30);
 
+    private static readonly TimeSpan ReviewFrameTime = TimeSpan.FromSeconds(1d / 15d);
+
+    private readonly PanelithService _service;
     private readonly ScreenWorkshop _workshop;
     private readonly ILogger _logger;
     private readonly string? _wallpaperFor;
     private readonly string _previewFolder = Path.Combine(Path.GetTempPath(), "Panelith", "preview");
+    private readonly object _renderGate = new();
     private CancellationTokenSource? _work;
     private CancellationTokenSource? _previewDelay;
+    private Made? _made;
+    private ThemeRenderer? _renderer;
+    private DispatcherTimer? _reviewTimer;
+    private bool _rendering;
 
     /// <summary>Creates the importer for <paramref name="source"/>.</summary>
     /// <param name="service">The running engine.</param>
@@ -39,6 +52,7 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
     public MediaImportViewModel(PanelithService service, string source, string? wallpaperFor)
     {
         ArgumentNullException.ThrowIfNull(service);
+        _service = service;
         _workshop = new ScreenWorkshop(service.Library, service.Runtime.Paths);
         _logger = service.Log.CreateLogger("Panelith.App.Import");
         _wallpaperFor = wallpaperFor;
@@ -141,6 +155,24 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
 
     public bool IsIdle => !IsBusy;
 
+    /// <summary>True while the finished screen plays for review.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEditing))]
+    [NotifyCanExecuteChangedFor(nameof(CreateCommand))]
+    public partial bool IsReviewing { get; set; }
+
+    public bool IsEditing => !IsReviewing;
+
+    /// <summary>The finished screen, playing as it will on the panel.</summary>
+    public LiveFrame ResultFrame { get; } = new();
+
+    /// <summary>Where the loop was saved as an ordinary video, or null.</summary>
+    [ObservableProperty]
+    public partial string? ExportedFile { get; set; }
+
+    /// <summary>Where the downloaded video is kept, when it came from YouTube.</summary>
+    public string? DownloadedFile => Source.StartsWith(MediaFolders.Downloads, StringComparison.OrdinalIgnoreCase) ? Source : null;
+
     public string LengthText
     {
         get
@@ -229,9 +261,9 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         }
     }
 
-    private bool CanCreate() => IsLoaded && !IsBusy && (!IsNewScreen || !string.IsNullOrWhiteSpace(Name));
+    private bool CanCreate() => IsLoaded && !IsBusy && !IsReviewing && (!IsNewScreen || !string.IsNullOrWhiteSpace(Name));
 
-    /// <summary>Bakes the clip or picture and writes the screen.</summary>
+    /// <summary>Bakes the clip or picture, writes the screen, then plays it for review.</summary>
     [RelayCommand(CanExecute = nameof(CanCreate))]
     private async Task CreateAsync()
     {
@@ -239,27 +271,33 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         Problem = null;
         Progress = 0d;
         _work = new CancellationTokenSource();
-        string? createdFolder = null;
+        Made? made = null;
         try
         {
-            string id;
+            string? clip = null;
             if (IsNewScreen)
             {
-                (id, createdFolder) = _workshop.NewScreenFolder(Name.Trim());
-                await BakeVideoAsync(Path.Combine(createdFolder, "clip" + ClipFile.Extension), _work.Token);
+                var (id, folder) = _workshop.NewScreenFolder(Name.Trim());
+                made = new Made(id, folder, DeleteFolder: true, OriginalTheme: null, NewAsset: null, null!);
+                clip = Path.Combine(folder, "clip" + ClipFile.Extension);
+                await BakeVideoAsync(clip, _work.Token);
                 var theme = ScreenWorkshop.VideoScreen(id, Name.Trim(), PanelWidth, PanelHeight, "clip" + ClipFile.Extension, Speed, (VideoOverlay)Overlay);
-                _workshop.Save(theme, createdFolder);
-                createdFolder = null;
+                _workshop.Save(theme, folder);
+                made = made with { Theme = theme with { BasePath = folder } };
             }
             else
             {
                 Status = "Making an editable copy of the screen...";
                 var (editId, folder, theme) = _workshop.Editable(_wallpaperFor!);
-                id = editId;
+                var forked = !string.Equals(editId, _wallpaperFor, StringComparison.OrdinalIgnoreCase);
+                var themeFile = Path.Combine(folder, "theme.json");
+                var original = forked || !File.Exists(themeFile) ? null : await File.ReadAllTextAsync(themeFile, _work.Token);
                 var file = ScreenWorkshop.FreshAssetName(folder, "wallpaper", IsVideo ? ClipFile.Extension : ".jpg");
+                made = new Made(editId, folder, DeleteFolder: forked, original, Path.Combine(folder, file), null!);
                 if (IsVideo)
                 {
-                    await BakeVideoAsync(Path.Combine(folder, file), _work.Token);
+                    clip = Path.Combine(folder, file);
+                    await BakeVideoAsync(clip, _work.Token);
                 }
                 else
                 {
@@ -272,11 +310,18 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
                 var scrim = ScrimPercent < 1d ? null : "#000000" + ((int)Math.Round(ScrimPercent / 100d * 255d)).ToString("x2", CultureInfo.InvariantCulture);
                 var updated = ScreenWorkshop.WithWallpaper(theme, IsVideo ? null : file, IsVideo ? file : null, Speed, scrim);
                 _workshop.Save(updated, folder);
-                ScreenWorkshop.RemoveUnusedWallpapers(folder, updated);
+                made = made with { Theme = updated with { BasePath = folder } };
             }
 
-            _logger.LogInformation("Made {Screen} from {File}.", id, Source);
-            Finished?.Invoke(this, id);
+            if (clip is not null)
+            {
+                made = made with { Exported = await ExportAsync(clip, made.Theme.Name, _work.Token) };
+            }
+
+            _logger.LogInformation("Made {Screen} from {File}.", made.Id, Source);
+            _made = made;
+            made = null;
+            StartReview();
         }
         catch (OperationCanceledException)
         {
@@ -290,9 +335,9 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         }
         finally
         {
-            if (createdFolder is not null)
+            if (made is not null)
             {
-                TryDeleteFolder(createdFolder);
+                Discard(made);
             }
 
             ProgressKnown = true;
@@ -302,7 +347,48 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Stops a bake in progress, or closes the window.</summary>
+    /// <summary>Keeps what was made and puts it on the panel.</summary>
+    [RelayCommand]
+    private void Accept()
+    {
+        if (_made is not { } made)
+        {
+            return;
+        }
+
+        StopReview();
+        _made = null;
+        if (IsWallpaper)
+        {
+            ScreenWorkshop.RemoveUnusedWallpapers(made.Folder, made.Theme);
+        }
+
+        Finished?.Invoke(this, made.Id);
+    }
+
+    /// <summary>Throws away what was made and goes back to choosing the part and the length.</summary>
+    [RelayCommand]
+    private void Back()
+    {
+        StopReview();
+        if (_made is { } made)
+        {
+            _made = null;
+            Discard(made);
+        }
+
+        Status = "Change anything you like, then create it again.";
+    }
+
+    /// <summary>Opens the folder with the downloads and the loops made into screens.</summary>
+    [RelayCommand]
+    private static void OpenVideosFolder()
+    {
+        Directory.CreateDirectory(MediaFolders.Root);
+        SettingsViewModel.OpenFolder(MediaFolders.Root);
+    }
+
+    /// <summary>Stops a bake in progress, or closes the window, throwing away anything not yet accepted.</summary>
     [RelayCommand]
     private void Cancel()
     {
@@ -320,6 +406,20 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
     {
         _work?.Cancel();
         _previewDelay?.Cancel();
+        StopReview();
+        if (_made is { } made)
+        {
+            _made = null;
+            Discard(made);
+        }
+
+        lock (_renderGate)
+        {
+            _renderer?.Dispose();
+            _renderer = null;
+        }
+
+        ResultFrame.Dispose();
         Preview?.Dispose();
         PreparedSource.Clear();
         try
@@ -416,6 +516,130 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         return time.TotalHours >= 1d ? time.ToString(@"h\:mm\:ss", CultureInfo.InvariantCulture) : time.ToString(@"m\:ss\.f", CultureInfo.InvariantCulture);
     }
 
+    private async Task<string?> ExportAsync(string clip, string name, CancellationToken cancellationToken)
+    {
+        Status = "Saving the loop as a video you can play anywhere...";
+        ProgressKnown = false;
+        var mp4 = MediaFolders.FreshFile(MediaFolders.Screens, name, ".mp4");
+        try
+        {
+            await MediaJobs.ExportAsync(clip, mp4, Speed, cancellationToken);
+            return mp4;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning("Could not save {Clip} as a video: {Error}", clip, ex.Message);
+            TryDeleteFile(mp4);
+            return null;
+        }
+    }
+
+    private void StartReview()
+    {
+        var made = _made!;
+        ExportedFile = made.Exported;
+        lock (_renderGate)
+        {
+            _renderer?.Dispose();
+            _renderer = new ThemeRenderer(made.Theme, new ThemeRenderOptions(PanelWidth, PanelHeight, ThemeFolder: made.Folder));
+        }
+
+        IsReviewing = true;
+        Status = IsNewScreen
+            ? "This is the new screen as it will play on the panel."
+            : "This is the screen with its new wallpaper, as it will play on the panel.";
+        _reviewTimer = new DispatcherTimer(ReviewFrameTime, DispatcherPriority.Background, (_, _) => RenderReviewFrame());
+        _reviewTimer.Start();
+        RenderReviewFrame();
+    }
+
+    private void StopReview()
+    {
+        _reviewTimer?.Stop();
+        _reviewTimer = null;
+        IsReviewing = false;
+        ExportedFile = null;
+    }
+
+    private void RenderReviewFrame()
+    {
+        if (_rendering || !IsReviewing)
+        {
+            return;
+        }
+
+        _rendering = true;
+        var bindings = _service.Runtime.Bindings;
+        Task.Run(() =>
+        {
+            lock (_renderGate)
+            {
+                return _renderer?.Render(bindings);
+            }
+        }).ContinueWith(
+            t =>
+            {
+                _rendering = false;
+                if (t.IsCompletedSuccessfully && t.Result is { } frame && IsReviewing)
+                {
+                    ResultFrame.Update(frame);
+                }
+                else if (t.Exception is { } ex)
+                {
+                    _logger.LogDebug("Review frame failed: {Error}", ex.InnerException?.Message);
+                }
+            },
+            CancellationToken.None,
+            TaskContinuationOptions.None,
+            TaskScheduler.FromCurrentSynchronizationContext());
+    }
+
+    /// <summary>Removes everything a create made, or puts back the screen as it was.</summary>
+    private void Discard(Made made)
+    {
+        if (made.Exported is not null)
+        {
+            TryDeleteFile(made.Exported);
+        }
+
+        if (made.DeleteFolder)
+        {
+            TryDeleteFolder(made.Folder);
+            return;
+        }
+
+        try
+        {
+            if (made.OriginalTheme is not null)
+            {
+                File.WriteAllText(Path.Combine(made.Folder, "theme.json"), made.OriginalTheme);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning("Could not put back {Screen}: {Error}", made.Id, ex.Message);
+        }
+
+        if (made.NewAsset is not null)
+        {
+            TryDeleteFile(made.NewAsset);
+        }
+    }
+
+    private static void TryDeleteFile(string file)
+    {
+        try
+        {
+            File.Delete(file);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+    }
+
     private static void TryDeleteFolder(string folder)
     {
         try
@@ -429,4 +653,14 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         {
         }
     }
+
+    /// <summary>What a create wrote, so it can be kept or undone.</summary>
+    /// <param name="Id">The screen.</param>
+    /// <param name="Folder">The screen's folder.</param>
+    /// <param name="DeleteFolder">Whether undoing deletes the whole folder, for a new screen or a fresh copy.</param>
+    /// <param name="OriginalTheme">The screen's <c>theme.json</c> before the change, to put back.</param>
+    /// <param name="NewAsset">The wallpaper file added.</param>
+    /// <param name="Theme">The screen as saved.</param>
+    /// <param name="Exported">The loop saved as an MP4.</param>
+    private sealed record Made(string Id, string Folder, bool DeleteFolder, string? OriginalTheme, string? NewAsset, Theme Theme, string? Exported = null);
 }

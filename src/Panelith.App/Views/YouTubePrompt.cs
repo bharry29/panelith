@@ -8,6 +8,7 @@ using Panelith.Engine;
 namespace Panelith.App.Views;
 
 /// <summary>Asks for a YouTube link and downloads the video, after a one-time note about the user's responsibility.</summary>
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
 internal static class YouTubePrompt
 {
     private const string Responsibility =
@@ -160,6 +161,13 @@ internal static class YouTubePrompt
             {
                 new TextBlock { Text = "Make a video screen from YouTube", FontSize = 16, FontWeight = FontWeight.SemiBold },
                 new TextBlock { Text = "Paste the link to a single video. Panelith downloads it, then you choose the part to loop.", TextWrapping = TextWrapping.Wrap },
+                new TextBlock
+                {
+                    Text = $"It gets the sharpest version Windows can play ({(YouTubeDownloader.PrefersAv1 ? "up to 4K" : "up to 1080p; add the free AV1 Video Extension from the Microsoft Store for 4K")}) and keeps it in {MediaFolders.Downloads}.",
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 12,
+                    Foreground = Brushes.Gray,
+                },
                 url,
                 note,
                 agree,

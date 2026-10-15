@@ -44,6 +44,9 @@ public sealed class MediaFoundationDecoder : IDisposable
     public static bool IsAvailable =>
         NativeLibrary.TryLoad(Path.Combine(Environment.SystemDirectory, "mfplat.dll"), out var handle) && Free(handle);
 
+    /// <summary>Whether Windows can decode AV1, which the free AV1 Video Extension adds.</summary>
+    public static bool CanDecodeAv1 => CanDecode(new Guid("31305641-0000-0010-8000-00aa00389b71"));
+
     /// <summary>Opens <paramref name="path"/> for decoding.</summary>
     public static MediaFoundationDecoder Open(string path)
     {
@@ -199,6 +202,41 @@ public sealed class MediaFoundationDecoder : IDisposable
     {
         NativeLibrary.Free(handle);
         return true;
+    }
+
+    private static bool CanDecode(Guid subtype)
+    {
+        if (!IsAvailable)
+        {
+            return false;
+        }
+
+        Startup();
+        try
+        {
+            var input = new RegisterTypeInfo { GuidMajorType = MediaTypeGuids.Video, GuidSubtype = subtype };
+            MediaFactory.MFTEnumEx(TransformCategoryGuids.VideoDecoder, (uint)EnumFlag.EnumFlagAll, input, null, out var activates, out var count);
+            if (activates == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < count; i++)
+            {
+                Marshal.Release(Marshal.ReadIntPtr(activates, i * IntPtr.Size));
+            }
+
+            Marshal.FreeCoTaskMem(activates);
+            return count > 0;
+        }
+        catch (SharpGenException)
+        {
+            return false;
+        }
+        finally
+        {
+            Shutdown();
+        }
     }
 
     private static void Startup()
