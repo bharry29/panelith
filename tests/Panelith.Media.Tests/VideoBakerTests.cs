@@ -25,10 +25,10 @@ public sealed class VideoBakerTests : IDisposable
         }
     }
 
-    /// <summary>Three seconds at 30 fps, 320x192: a second each of red, green and blue.</summary>
-    private static void WriteTestVideo(string path, bool fragmented = false)
+    /// <summary>Three seconds at 30 fps, 320 wide: a second each of red, green and blue.</summary>
+    private static void WriteTestVideo(string path, bool fragmented = false, int height = 192)
     {
-        const int width = 320, height = 192, fps = 30;
+        const int width = 320, fps = 30;
         MediaFactory.MFStartup();
         try
         {
@@ -45,7 +45,7 @@ public sealed class VideoBakerTests : IDisposable
                 output.Set(MediaTypeAttributeKeys.Subtype, H264);
                 output.Set(MediaTypeAttributeKeys.AvgBitrate, 2_000_000u);
                 output.Set(MediaTypeAttributeKeys.InterlaceMode, 2u);
-                output.Set(MediaTypeAttributeKeys.FrameSize, ((ulong)width << 32) | height);
+                output.Set(MediaTypeAttributeKeys.FrameSize, ((ulong)width << 32) | (uint)height);
                 output.Set(MediaTypeAttributeKeys.FrameRate, ((ulong)fps << 32) | 1);
                 output.Set(MediaTypeAttributeKeys.PixelAspectRatio, (1UL << 32) | 1);
                 writer.AddStream(output);
@@ -56,7 +56,7 @@ public sealed class VideoBakerTests : IDisposable
                 input.Set(MediaTypeAttributeKeys.MajorType, MediaTypeGuids.Video);
                 input.Set(MediaTypeAttributeKeys.Subtype, VideoFormatGuids.Rgb32);
                 input.Set(MediaTypeAttributeKeys.InterlaceMode, 2u);
-                input.Set(MediaTypeAttributeKeys.FrameSize, ((ulong)width << 32) | height);
+                input.Set(MediaTypeAttributeKeys.FrameSize, ((ulong)width << 32) | (uint)height);
                 input.Set(MediaTypeAttributeKeys.FrameRate, ((ulong)fps << 32) | 1);
                 input.Set(MediaTypeAttributeKeys.PixelAspectRatio, (1UL << 32) | 1);
                 writer.SetInputMediaType(0, input, null);
@@ -127,6 +127,24 @@ public sealed class VideoBakerTests : IDisposable
         AssertMostly(SKColors.Lime, Centre(reader, 22));
         AssertMostly(SKColors.Blue, Centre(reader, info.FrameCount - 3));
         Assert.False(File.Exists(output + ".partial"));
+    }
+
+    [Fact]
+    public void OnlyTheVisiblePartOfAPaddedPictureIsDecoded()
+    {
+        Assert.SkipUnless(File.Exists(_video), "Media Foundation is not available.");
+        var padded = Path.Combine(_folder, "180.mp4");
+        WriteTestVideo(padded, height: 180);
+
+        using var decoder = MediaFoundationDecoder.Open(padded);
+        Assert.Equal(320, decoder.Width);
+        Assert.Equal(180, decoder.Height);
+        using var frame = decoder.Next();
+        Assert.NotNull(frame);
+        using var bitmap = new SKBitmap(320, 180, SKColorType.Bgra8888, SKAlphaType.Premul);
+        frame.CopyTo(bitmap);
+        AssertMostly(SKColors.Red, bitmap.GetPixel(160, 2));
+        AssertMostly(SKColors.Red, bitmap.GetPixel(160, 177));
     }
 
     [Fact]

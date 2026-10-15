@@ -19,23 +19,23 @@ public sealed class MediaFoundationDecoder : IDisposable
     private static int s_users;
 
     private readonly IMFSourceReader _reader;
-    private readonly int _stride;
+    private Format _format;
+    private IMFSample? _pending;
+    private bool _ended;
     private bool _disposed;
 
-    private MediaFoundationDecoder(IMFSourceReader reader, int width, int height, int stride, TimeSpan? duration)
+    private MediaFoundationDecoder(IMFSourceReader reader, Format format, TimeSpan? duration)
     {
         _reader = reader;
-        Width = width;
-        Height = height;
-        _stride = stride;
+        _format = format;
         Duration = duration;
     }
 
     /// <summary>Picture width.</summary>
-    public int Width { get; }
+    public int Width => _format.Width;
 
     /// <summary>Picture height.</summary>
-    public int Height { get; }
+    public int Height => _format.Height;
 
     /// <summary>Length of the video, when the file says.</summary>
     public TimeSpan? Duration { get; }
@@ -72,9 +72,18 @@ public sealed class MediaFoundationDecoder : IDisposable
                 reader.SetCurrentMediaType(SourceReaderIndex.FirstVideoStream, wanted);
             }
 
-            var (width, height, stride) = ReadFormat(reader);
-            var decoder = new MediaFoundationDecoder(reader, width, height, stride, ReadDuration(reader));
+            var decoder = new MediaFoundationDecoder(reader, ReadFormat(reader), ReadDuration(reader));
             reader = null;
+            try
+            {
+                decoder.Prime();
+            }
+            catch
+            {
+                decoder.Dispose();
+                throw;
+            }
+
             return decoder;
         }
         catch (SharpGenException ex)
@@ -97,6 +106,9 @@ public sealed class MediaFoundationDecoder : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (position > TimeSpan.Zero)
         {
+            _pending?.Dispose();
+            _pending = null;
+            _ended = false;
             _reader.SetCurrentPosition(position.Ticks);
         }
     }
@@ -105,6 +117,25 @@ public sealed class MediaFoundationDecoder : IDisposable
     public IDecodedFrame? Next()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_pending is { } pending)
+        {
+            _pending = null;
+            return new Frame(pending, _format);
+        }
+
+        var sample = _ended ? null : Read(allowResize: false);
+        return sample is null ? null : new Frame(sample, _format);
+    }
+
+    /// <summary>
+    /// Decodes up to the first picture. The container's size is often only a
+    /// guess (H.264 rounds 1080 rows up to 1088); the decoder's first output
+    /// says the real one, so the size is settled before anyone reads it.
+    /// </summary>
+    private void Prime() => _pending = Read(allowResize: true);
+
+    private IMFSample? Read(bool allowResize)
+    {
         while (true)
         {
             IMFSample? sample;
@@ -126,21 +157,24 @@ public sealed class MediaFoundationDecoder : IDisposable
 
             if ((flags & SourceReaderFlag.CurrentMediaTypeChanged) != 0)
             {
-                var (width, height, _) = ReadFormat(_reader);
-                if (width != Width || height != Height)
+                var format = ReadFormat(_reader);
+                if (!allowResize && (format.Width != Width || format.Height != Height))
                 {
                     sample?.Dispose();
-                    throw new InvalidDataException("The video changes size part way through, which Panelith cannot bake.");
+                    throw new InvalidDataException($"The video changes size part way through, from {Width}x{Height} to {format.Width}x{format.Height}, which Panelith cannot bake.");
                 }
+
+                _format = format;
             }
 
             if (sample is not null)
             {
-                return new Frame(sample, Width, Height, _stride);
+                return sample;
             }
 
             if ((flags & SourceReaderFlag.EndOfStream) != 0)
             {
+                _ended = true;
                 return null;
             }
         }
@@ -155,6 +189,8 @@ public sealed class MediaFoundationDecoder : IDisposable
         }
 
         _disposed = true;
+        _pending?.Dispose();
+        _pending = null;
         _reader.Dispose();
         Shutdown();
     }
@@ -187,7 +223,7 @@ public sealed class MediaFoundationDecoder : IDisposable
         }
     }
 
-    private static (int Width, int Height, int Stride) ReadFormat(IMFSourceReader reader)
+    private static Format ReadFormat(IMFSourceReader reader)
     {
         using var type = reader.GetCurrentMediaType(SourceReaderIndex.FirstVideoStream);
         var size = type.GetUInt64(MediaTypeAttributeKeys.FrameSize);
@@ -205,8 +241,29 @@ public sealed class MediaFoundationDecoder : IDisposable
             stride = unchecked((int)stored);
         }
 
-        return (width, height, stride);
+        // H.264 codes whole 16-pixel blocks, so a 1920x804 video decodes as 1920x816
+        // with junk below the picture. The display aperture says which part is real.
+        var (x, y, w, h) = (0, 0, width, height);
+        if (type.GetBlobSize(MinimumDisplayAperture, out var blobSize).Success && blobSize >= 16)
+        {
+            var area = type.GetBlob(MinimumDisplayAperture);
+            var ax = BitConverter.ToInt16(area, 2);
+            var ay = BitConverter.ToInt16(area, 6);
+            var aw = BitConverter.ToInt32(area, 8);
+            var ah = BitConverter.ToInt32(area, 12);
+            if (ax >= 0 && ay >= 0 && aw > 0 && ah > 0 && ax + aw <= width && ay + ah <= height)
+            {
+                (x, y, w, h) = (ax, ay, aw, ah);
+            }
+        }
+
+        return new Format(w, h, stride, x, y, height);
     }
+
+    /// <summary>MF_MT_MINIMUM_DISPLAY_APERTURE.</summary>
+    private static readonly Guid MinimumDisplayAperture = new("d7388766-18fe-48c6-a177-ee894867c8c4");
+
+    private readonly record struct Format(int Width, int Height, int Stride, int Left, int Top, int CodedHeight);
 
     private static TimeSpan? ReadDuration(IMFSourceReader reader)
     {
@@ -221,7 +278,7 @@ public sealed class MediaFoundationDecoder : IDisposable
         }
     }
 
-    private sealed class Frame(IMFSample sample, int width, int height, int stride) : IDecodedFrame
+    private sealed class Frame(IMFSample sample, Format format) : IDecodedFrame
     {
         public TimeSpan Timestamp { get; } = TimeSpan.FromTicks(sample.SampleTime);
 
@@ -229,6 +286,7 @@ public sealed class MediaFoundationDecoder : IDisposable
 
         public void CopyTo(SKBitmap destination)
         {
+            var (width, height) = (format.Width, format.Height);
             if (destination.Width != width || destination.Height != height || destination.ColorType != SKColorType.Bgra8888)
             {
                 throw new ArgumentException("The bitmap does not match the video.", nameof(destination));
@@ -239,8 +297,9 @@ public sealed class MediaFoundationDecoder : IDisposable
             try
             {
                 var rowBytes = width * 4;
-                var pitch = Math.Abs(stride);
-                if (pitch < rowBytes || (long)pitch * (height - 1) + rowBytes > length)
+                var left = format.Left * 4L;
+                var pitch = Math.Abs(format.Stride);
+                if (pitch < left + rowBytes || (long)pitch * (format.CodedHeight - 1) + left + rowBytes > length)
                 {
                     throw new InvalidDataException("A decoded picture is smaller than its format says.");
                 }
@@ -248,10 +307,11 @@ public sealed class MediaFoundationDecoder : IDisposable
                 var target = destination.GetPixels();
                 for (var y = 0; y < height; y++)
                 {
-                    var sourceRow = stride < 0 ? height - 1 - y : y;
+                    var codedRow = format.Top + y;
+                    var sourceRow = format.Stride < 0 ? format.CodedHeight - 1 - codedRow : codedRow;
                     unsafe
                     {
-                        var from = new ReadOnlySpan<byte>((byte*)data + ((long)sourceRow * pitch), rowBytes);
+                        var from = new ReadOnlySpan<byte>((byte*)data + ((long)sourceRow * pitch) + left, rowBytes);
                         var to = new Span<byte>((byte*)target + ((long)y * destination.RowBytes), rowBytes);
                         from.CopyTo(to);
                         MakeOpaque(MemoryMarshal.Cast<byte, uint>(to));
