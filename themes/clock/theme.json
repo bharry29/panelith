@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "clock",
+  "name": "Clock",
+  "author": "Panelith",
+  "description": "For when you step away: a wall-to-wall clock and date, with temperatures whispered underneath.",
+  "canvas": { "width": 1920, "height": 480, "scaling": "fit", "background": "#000000" },
+  "background": { "color": "#000000", "gradientTo": "#060912", "gradientAngle": 90 },
+  "defaults": { "fontFamily": "Segoe UI Variable Display", "color": "#f2f5fa", "accentColor": "#6fb6ff", "trackColor": "#141820" },
+  "widgets": [
+    { "type": "text", "stabilizeWidth": false, "x": 60, "y": 10, "width": 1800, "height": 340, "text": "{@sys.time}", "fontSize": 320, "fontWeight": 200, "align": "center", "verticalAlign": "middle", "letterSpacing": -6 },
+    { "type": "text", "stabilizeWidth": false, "x": 60, "y": 350, "width": 1800, "height": 54, "text": "{@sys.date}", "fontSize": 42, "align": "center", "color": "#7d8798" },
+    { "type": "text", "stabilizeWidth": false, "x": 60, "y": 420, "width": 1800, "height": 34,
+      "text": "CPU {@cpu.temp:0}\u00B0   \u00B7   GPU {@gpu.temp:0}\u00B0   \u00B7   RAM {@mem.load:0}%   \u00B7   up {@sys.uptime:duration}", "fontSize": 24, "align": "center", "color": "#3c4452" }
+  ]
+}

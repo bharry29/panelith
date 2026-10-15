@@ -4,13 +4,59 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Build
+        run: dotnet build Panelith.slnx --configuration Release
+      - name: Test
+        run: dotnet test Panelith.slnx --configuration Release --no-build
+
+  audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
-      - name: Test
-        run: dotnet test RigGlass.slnx --configuration Release
+      - name: Restore
+        run: dotnet restore Panelith.slnx
+      - name: Check for vulnerable packages
+        shell: bash
+        run: |
+          dotnet list Panelith.slnx package --vulnerable --include-transitive 2>&1 | tee audit.txt
+          if grep -q "has the following vulnerable packages" audit.txt; then
+            echo "::error::A dependency has a known vulnerability. See the list above."
+            exit 1
+          fi
+
+  installer:
+    runs-on: windows-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+      - name: Publish and build the installer
+        shell: pwsh
+        run: ./build/publish.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: panelith-installer
+          path: artifacts/installer/*.exe
+          if-no-files-found: error

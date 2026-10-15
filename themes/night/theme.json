@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "id": "night",
+  "name": "Night",
+  "author": "Panelith",
+  "description": "Low glare for late hours: a warm amber clock on black and a few quiet numbers. Pairs with the Night profile's dimming.",
+  "canvas": { "width": 1920, "height": 480, "scaling": "fit", "background": "#000000" },
+  "background": { "color": "#000000" },
+  "defaults": { "fontFamily": "Segoe UI Variable Display", "color": "#d98a3d", "accentColor": "#d98a3d", "trackColor": "#1a0f06" },
+  "widgets": [
+    { "type": "text", "stabilizeWidth": false, "x": 80, "y": 60, "width": 1100, "height": 300, "text": "{@sys.time}", "fontSize": 270, "fontWeight": 200, "verticalAlign": "middle", "letterSpacing": -5 },
+    { "type": "text", "stabilizeWidth": false, "x": 92, "y": 360, "width": 1000, "height": 50, "text": "{@sys.date}", "fontSize": 36, "color": "#7a4c22" },
+
+    { "type": "shape", "x": 1240, "y": 90, "width": 2, "height": 300, "shape": "rectangle", "fill": "#1f1309" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 1300, "y": 96, "width": 260, "height": 28, "text": "CPU", "fontSize": 22, "letterSpacing": 4, "color": "#6b4220" },
+    { "type": "text", "stabilizeWidth": false, "x": 1300, "y": 126, "width": 260, "height": 80, "text": "{@cpu.temp:0}\u00B0", "fontSize": 70, "fontWeight": 300,
+      "colorStops": [ { "at": 0, "color": "#d98a3d" }, { "at": 80, "color": "#d98a3d" }, { "at": 92, "color": "#d9483d" } ] },
+    { "type": "text", "stabilizeWidth": false, "x": 1300, "y": 212, "width": 260, "height": 30, "text": "{@cpu.load:0}% load", "fontSize": 22, "color": "#7a4c22" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 1600, "y": 96, "width": 260, "height": 28, "text": "GPU", "fontSize": 22, "letterSpacing": 4, "color": "#6b4220" },
+    { "type": "text", "stabilizeWidth": false, "x": 1600, "y": 126, "width": 260, "height": 80, "text": "{@gpu.temp:0}\u00B0", "fontSize": 70, "fontWeight": 300,
+      "colorStops": [ { "at": 0, "color": "#d98a3d" }, { "at": 80, "color": "#d98a3d" }, { "at": 92, "color": "#d9483d" } ] },
+    { "type": "text", "stabilizeWidth": false, "x": 1600, "y": 212, "width": 260, "height": 30, "text": "{@gpu.load:0}% load", "fontSize": 22, "color": "#7a4c22" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 1300, "y": 290, "width": 560, "height": 30, "text": "RAM {@mem.load:0}%   \u00B7   \u2193 {@net.down:rate}", "fontSize": 24, "color": "#7a4c22" },
+    { "type": "text", "stabilizeWidth": false, "x": 1300, "y": 330, "width": 560, "height": 30, "text": "up {@sys.uptime:duration}", "fontSize": 24, "color": "#4d3016" }
+  ]
+}

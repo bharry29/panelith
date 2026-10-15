@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "id": "esports",
+  "name": "Esports",
+  "author": "Panelith",
+  "description": "Three giant high-contrast numbers you can read with a glance mid-match: FPS (or GPU load without RivaTuner), GPU temperature and CPU load.",
+  "canvas": { "width": 1920, "height": 480, "scaling": "fit", "background": "#000000" },
+  "background": { "color": "#000000" },
+  "defaults": { "fontFamily": "Inter", "color": "#ffffff", "accentColor": "#ff4655", "trackColor": "#16181c" },
+  "widgets": [
+    { "type": "text", "stabilizeWidth": false, "x": 40, "y": 26, "width": 580, "height": 40, "text": "FPS", "fontSize": 30, "fontWeight": 800, "letterSpacing": 10, "align": "center", "color": "#ff4655", "visibleWhen": "has(@game.fps)" },
+    { "type": "text", "stabilizeWidth": false, "x": 40, "y": 70, "width": 580, "height": 300, "text": "{@game.fps:0}", "fontSize": 270, "fontWeight": 900, "align": "center", "verticalAlign": "middle", "visibleWhen": "has(@game.fps)",
+      "colorBinding": "@game.fps", "colorStops": [ { "at": 0, "color": "#ff4655" }, { "at": 60, "color": "#ffffff" } ] },
+    { "type": "text", "stabilizeWidth": false, "x": 40, "y": 380, "width": 580, "height": 40, "text": "1% low {@game.low1:0}   \u00B7   {@game.frametime:0.0} ms", "fontSize": 28, "align": "center", "color": "#8a8f98", "visibleWhen": "has(@game.fps)" },
+    { "type": "text", "stabilizeWidth": false, "x": 40, "y": 26, "width": 580, "height": 40, "text": "GPU", "fontSize": 30, "fontWeight": 800, "letterSpacing": 10, "align": "center", "color": "#ff4655", "visibleWhen": "!has(@game.fps)" },
+    { "type": "text", "stabilizeWidth": false, "x": 40, "y": 70, "width": 580, "height": 300, "text": "{@gpu.load:0}%", "fontSize": 230, "fontWeight": 900, "align": "center", "verticalAlign": "middle", "visibleWhen": "!has(@game.fps)" },
+    { "type": "text", "stabilizeWidth": false, "x": 40, "y": 380, "width": 580, "height": 40, "text": "start RivaTuner for FPS", "fontSize": 26, "align": "center", "color": "#5b606a", "visibleWhen": "!has(@game.fps)" },
+    { "type": "bar", "x": 140, "y": 436, "width": 380, "height": 10, "value": "@game.fps", "minimum": 0, "maximum": 240, "cornerRadius": 5, "color": "#ff4655", "visibleWhen": "has(@game.fps)" },
+    { "type": "bar", "x": 140, "y": 436, "width": 380, "height": 10, "value": "@gpu.load", "minimum": 0, "maximum": 100, "cornerRadius": 5, "color": "#ff4655", "visibleWhen": "!has(@game.fps)" },
+
+    { "type": "shape", "x": 659, "y": 60, "width": 2, "height": 360, "shape": "rectangle", "fill": "#1c1f24" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 680, "y": 26, "width": 560, "height": 40, "text": "GPU TEMP", "fontSize": 30, "fontWeight": 800, "letterSpacing": 10, "align": "center", "color": "#8a8f98" },
+    { "type": "text", "stabilizeWidth": false, "x": 680, "y": 70, "width": 560, "height": 300, "text": "{@gpu.temp:0}\u00B0", "fontSize": 250, "fontWeight": 900, "align": "center", "verticalAlign": "middle",
+      "colorStops": [ { "at": 0, "color": "#ffffff" }, { "at": 78, "color": "#ffb020" }, { "at": 87, "color": "#ff4655" } ] },
+    { "type": "text", "stabilizeWidth": false, "x": 680, "y": 380, "width": 560, "height": 40, "text": "{@gpu.power:0} W   \u00B7   {@gpu.clock:clock}", "fontSize": 28, "align": "center", "color": "#8a8f98" },
+    { "type": "bar", "x": 770, "y": 436, "width": 380, "height": 10, "value": "@gpu.temp", "minimum": 20, "maximum": 100, "cornerRadius": 5,
+      "colorStops": [ { "at": 0, "color": "#ffffff" }, { "at": 78, "color": "#ffb020" }, { "at": 87, "color": "#ff4655" } ] },
+
+    { "type": "shape", "x": 1259, "y": 60, "width": 2, "height": 360, "shape": "rectangle", "fill": "#1c1f24" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 1280, "y": 26, "width": 600, "height": 40, "text": "CPU", "fontSize": 30, "fontWeight": 800, "letterSpacing": 10, "align": "center", "color": "#8a8f98" },
+    { "type": "text", "stabilizeWidth": false, "x": 1280, "y": 70, "width": 600, "height": 300, "text": "{@cpu.load:0}%", "fontSize": 230, "fontWeight": 900, "align": "center", "verticalAlign": "middle" },
+    { "type": "text", "stabilizeWidth": false, "x": 1280, "y": 380, "width": 600, "height": 40, "text": "{@cpu.temp:0}\u00B0C   \u00B7   RAM {@mem.load:0}%   \u00B7   {@sys.time}", "fontSize": 28, "align": "center", "color": "#8a8f98" },
+    { "type": "bar", "x": 1390, "y": 436, "width": 380, "height": 10, "value": "@cpu.load", "minimum": 0, "maximum": 100, "cornerRadius": 5, "color": "#ffffff" }
+  ]
+}

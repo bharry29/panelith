@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Panelith.Engine</RootNamespace>
+    <Description>The Panelith runtime: configuration, the panel render loop, hotplug supervision and telemetry.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Panelith.Core/Panelith.Core.csproj" />
+    <ProjectReference Include="../Panelith.Devices/Panelith.Devices.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Panelith.Engine.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,96 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Panelith.App.ViewModels"
+        x:Class="Panelith.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="Panelith"
+        Icon="avares://Panelith/Assets/panelith.ico"
+        Width="1320" Height="880"
+        MinWidth="980" MinHeight="640"
+        WindowStartupLocation="CenterScreen">
+
+  <Grid>
+    <!-- Shown until the engine has started. -->
+    <StackPanel x:Name="Loading"
+                HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14"
+                IsVisible="{Binding $parent[Window].DataContext, Converter={x:Static ObjectConverters.IsNull}}">
+      <Image Source="avares://Panelith/Assets/panelith.png" Width="72" Height="72" />
+      <TextBlock x:Name="LoadingText" Text="Starting sensors and looking for panels…" Classes="muted" HorizontalAlignment="Center" />
+      <ProgressBar x:Name="LoadingBar" IsIndeterminate="True" Width="220" />
+    </StackPanel>
+
+    <Grid ColumnDefinitions="232,*"
+          IsVisible="{Binding $parent[Window].DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
+
+      <!-- Navigation rail -->
+      <Border Grid.Column="0" Background="{StaticResource RailBrush}" BorderBrush="{StaticResource StrokeBrush}" BorderThickness="0,0,1,0">
+        <DockPanel Margin="16,20,16,16">
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="6,0,0,26">
+            <Image Source="avares://Panelith/Assets/panelith.png" Width="30" Height="30" />
+            <TextBlock Text="Panelith" FontSize="19" FontWeight="Bold" VerticalAlignment="Center" />
+          </StackPanel>
+
+          <StackPanel DockPanel.Dock="Bottom" Spacing="10">
+            <Border Classes="card" Padding="14">
+              <StackPanel Spacing="8">
+                <TextBlock Text="PROFILE" Classes="label" />
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <PathIcon Data="{Binding ProfileIcon}" Width="16" Height="16" Foreground="{Binding ProfileBrush}" VerticalAlignment="Top" Margin="0,2,8,0" />
+                  <StackPanel Grid.Column="1" Spacing="1">
+                    <TextBlock Text="{Binding ProfileName}" FontWeight="SemiBold" Foreground="{Binding ProfileBrush}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding ProfileReason}" Classes="faint" FontSize="11" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding ProfileReason}" />
+                  </StackPanel>
+                  <ToggleButton Grid.Column="2" Classes="pin" IsChecked="{Binding IsProfilePinned, Mode=OneWay}" Command="{Binding ToggleProfilePinCommand}"
+                                ToolTip.Tip="Pin this profile, or unpin to switch automatically">
+                    <PathIcon Data="{x:Static vm:Icons.Pin}" Width="13" Height="13" />
+                  </ToggleButton>
+                </Grid>
+                <Border Height="1" Background="{StaticResource StrokeBrush}" Margin="0,2" />
+                <TextBlock Text="ON THE PANEL" Classes="label" />
+                <TextBlock Text="{Binding ActiveScreenName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                <Button Classes="ghost" HorizontalAlignment="Stretch" Command="{Binding NextScreenCommand}" ToolTip.Tip="Show the next screen">
+                  <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                    <PathIcon Data="{x:Static vm:Icons.Next}" Width="14" Height="14" />
+                    <TextBlock Text="Next screen" />
+                  </StackPanel>
+                </Button>
+              </StackPanel>
+            </Border>
+            <Border Classes="pill" HorizontalAlignment="Stretch" Padding="12,8">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Ellipse Width="9" Height="9" Fill="{Binding StatusBrush}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding StatusText}" FontSize="12" Classes="muted" TextTrimming="CharacterEllipsis" MaxWidth="170" />
+              </StackPanel>
+            </Border>
+            <StackPanel Orientation="Horizontal" Spacing="6" Margin="4,0" IsVisible="{Binding IsElevated}">
+              <PathIcon Data="{x:Static vm:Icons.Shield}" Width="12" Height="12" Foreground="{StaticResource AccentBrush}" />
+              <TextBlock Text="Administrator" FontSize="11" Classes="faint" />
+            </StackPanel>
+          </StackPanel>
+
+          <ListBox Classes="nav" ItemsSource="{Binding NavItems}" SelectedItem="{Binding SelectedNav}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:NavItem">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <PathIcon Data="{Binding Icon}" Width="18" Height="18" />
+                  <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="Medium" VerticalAlignment="Center" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Border>
+
+      <!-- Page -->
+      <Grid Grid.Column="1" RowDefinitions="Auto,*">
+        <Border Grid.Row="0" Classes="banner" Margin="28,18,28,0" IsVisible="{Binding Toast, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Classes="ghost" Content="Dismiss" Command="{Binding DismissToastCommand}" />
+            <TextBlock Text="{Binding Toast}" TextWrapping="Wrap" VerticalAlignment="Center" />
+          </DockPanel>
+        </Border>
+        <ContentControl Grid.Row="1" Content="{Binding SelectedNav.Page}" />
+      </Grid>
+    </Grid>
+  </Grid>
+</Window>

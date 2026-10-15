@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Panelith.Hosting</RootNamespace>
+    <Description>Wires sensors, panels and themes together for the Panelith command line and desktop app.</Description>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Panelith.Engine/Panelith.Engine.csproj" />
+    <ProjectReference Include="../Panelith.Devices/Panelith.Devices.csproj" />
+    <ProjectReference Include="../Panelith.Rendering/Panelith.Rendering.csproj" />
+    <ProjectReference Include="../Panelith.Monitoring/Panelith.Monitoring.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Panelith.Hosting.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,18 +1,18 @@
-RigGlass
-Copyright (c) RigGlass contributors
+Panelith
+Copyright (c) Panelith contributors
 
-This product includes software developed by the RigGlass contributors,
+This product includes software developed by the Panelith contributors,
 licensed under the Apache License, Version 2.0 (see LICENSE).
 
 ================================================================================
 Protocol provenance and clean-room statement
 ================================================================================
 
-RigGlass talks to USB display panels from several vendors. None of these
+Panelith talks to USB display panels from several vendors. None of these
 vendors publish a protocol specification for the panels in question, with the
 exception of BeadaPanel, which publishes an SDK.
 
-The device protocol implementations in `src/RigGlass.Devices` were written
+The device protocol implementations in `src/Panelith.Devices` were written
 from protocol *descriptions* -- byte layouts, command opcodes, handshake
 sequences and pixel encodings -- that have been published by the hardware
 reverse-engineering community. No source code was copied from any of the
@@ -44,7 +44,7 @@ with thanks:
     https://github.com/liquidctl/liquidctl
     Documented all-in-one cooler LCD protocols.
 
-RigGlass is not affiliated with, endorsed by, or supported by Thermalright,
+Panelith is not affiliated with, endorsed by, or supported by Thermalright,
 Turing, BeadaPanel, XuanFang, Kipye, WeAct Studio, or any other hardware
 vendor. All trademarks are the property of their respective owners. Vendor and
 model names appear in this project solely to identify hardware compatibility.
@@ -55,8 +55,18 @@ Bundled font
 
 Themes default to Inter, which is included in this repository under the SIL
 Open Font License, Version 1.1. The font files and the license text are in
-src/RigGlass.Rendering/Fonts/. Copyright (c) 2016 The Inter Project Authors
+src/Panelith.Rendering/Fonts/. Copyright (c) 2016 The Inter Project Authors
 (https://github.com/rsms/inter).
+
+================================================================================
+Bundled libusb
+================================================================================
+
+Windows builds include libusb 1.0.30 (src/Panelith.Devices/Native/win-x64/
+libusb-1.0.dll), unmodified from the official release at
+https://github.com/libusb/libusb/releases. libusb is licensed under the GNU
+Lesser General Public License, version 2.1, and is loaded dynamically; you may
+replace the DLL with your own build. Source: https://github.com/libusb/libusb.
 
 ================================================================================
 Third-party dependencies

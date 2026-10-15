@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "id": "game",
+  "name": "Game",
+  "author": "Panelith",
+  "description": "For playing: a huge FPS counter with 1% low and frame time from RivaTuner, a minute of frame times, and the GPU and CPU numbers that matter mid-game.",
+  "canvas": { "width": 1920, "height": 480, "scaling": "fit", "background": "#05070a" },
+  "background": { "color": "#05070a", "gradientTo": "#0a1009", "gradientAngle": 0 },
+  "defaults": { "fontFamily": "Inter", "color": "#eef5e6", "accentColor": "#76b900", "trackColor": "#161d12" },
+  "widgets": [
+    { "type": "shape", "x": 20, "y": 20, "width": 660, "height": 400, "shape": "rectangle", "fill": "#0b100a", "stroke": "#1b2614", "strokeWidth": 1.5, "cornerRadius": 22 },
+    { "type": "text", "stabilizeWidth": false, "x": 50, "y": 40, "width": 200, "height": 30, "text": "FPS", "fontSize": 22, "fontWeight": 700, "letterSpacing": 6, "color": "#76b900", "visibleWhen": "has(@game.fps)" },
+    { "type": "text", "stabilizeWidth": false, "x": 240, "y": 42, "width": 410, "height": 28, "text": "{@game.name}", "fontSize": 20, "align": "right", "color": "#8fa080", "visibleWhen": "has(@game.fps)" },
+    { "type": "text", "stabilizeWidth": false, "x": 40, "y": 70, "width": 620, "height": 230, "text": "{@game.fps:0}", "fontSize": 220, "fontWeight": 800, "align": "center", "verticalAlign": "middle",
+      "colorBinding": "@game.fps", "colorStops": [ { "at": 0, "color": "#ff5d73" }, { "at": 30, "color": "#f0c14a" }, { "at": 60, "color": "#a6e22e" } ], "visibleWhen": "has(@game.fps)" },
+    { "type": "text", "stabilizeWidth": false, "x": 50, "y": 318, "width": 290, "height": 24, "text": "1% LOW", "fontSize": 17, "fontWeight": 700, "letterSpacing": 4, "color": "#8fa080", "visibleWhen": "has(@game.fps)" },
+    { "type": "text", "stabilizeWidth": false, "x": 50, "y": 344, "width": 290, "height": 56, "text": "{@game.low1:0}", "fontSize": 50, "fontWeight": 700, "visibleWhen": "has(@game.low1)" },
+    { "type": "text", "stabilizeWidth": false, "x": 50, "y": 344, "width": 290, "height": 56, "text": "…", "fontSize": 50, "fontWeight": 700, "color": "#5f6d52", "visibleWhen": "has(@game.fps) && !has(@game.low1)" },
+    { "type": "text", "stabilizeWidth": false, "x": 360, "y": 318, "width": 290, "height": 24, "text": "FRAME TIME", "fontSize": 17, "fontWeight": 700, "letterSpacing": 4, "align": "right", "color": "#8fa080", "visibleWhen": "has(@game.fps)" },
+    { "type": "text", "stabilizeWidth": false, "x": 360, "y": 344, "width": 290, "height": 56, "text": "{@game.frametime:0.0} ms", "fontSize": 50, "fontWeight": 700, "align": "right", "visibleWhen": "has(@game.fps)" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 50, "y": 40, "width": 300, "height": 30, "text": "GPU LOAD", "fontSize": 22, "fontWeight": 700, "letterSpacing": 6, "color": "#76b900", "visibleWhen": "!has(@game.fps)" },
+    { "type": "text", "stabilizeWidth": false, "x": 40, "y": 76, "width": 620, "height": 210, "text": "{@gpu.load:0}%", "fontSize": 190, "fontWeight": 800, "align": "center", "verticalAlign": "middle", "visibleWhen": "!has(@game.fps)" },
+    { "type": "text", "stabilizeWidth": false, "x": 50, "y": 322, "width": 600, "height": 30, "text": "Start RivaTuner Statistics Server for FPS,", "fontSize": 22, "align": "center", "color": "#8fa080", "visibleWhen": "!has(@game.fps)" },
+    { "type": "text", "stabilizeWidth": false, "x": 50, "y": 356, "width": 600, "height": 30, "text": "1% lows and frame times (comes with Afterburner)", "fontSize": 22, "align": "center", "color": "#5f6d52", "visibleWhen": "!has(@game.fps)" },
+
+    { "type": "shape", "x": 700, "y": 20, "width": 640, "height": 400, "shape": "rectangle", "fill": "#0b100a", "stroke": "#1b2614", "strokeWidth": 1.5, "cornerRadius": 22 },
+    { "type": "text", "stabilizeWidth": false, "x": 728, "y": 40, "width": 400, "height": 26, "text": "FRAME TIME \u00B7 LAST MINUTE", "fontSize": 17, "fontWeight": 700, "letterSpacing": 3, "color": "#8fa080", "visibleWhen": "has(@game.fps)" },
+    { "type": "text", "stabilizeWidth": false, "x": 1110, "y": 40, "width": 210, "height": 26, "text": "peak {maxover(@game.frametime, 60):0.0} ms", "fontSize": 17, "align": "right", "color": "#f0c14a", "visibleWhen": "has(@game.fps)" },
+    { "type": "graph", "x": 720, "y": 80, "width": 600, "height": 320, "windowSeconds": 60, "minimum": 0, "gridColor": "#141d10", "gridDivisions": 4, "backgroundColor": "#00000000", "visibleWhen": "has(@game.fps)",
+      "series": [ { "value": "@game.frametime", "color": "#a6e22e", "thickness": 2.5, "fill": true, "fillOpacity": 0.18, "smooth": false } ] },
+    { "type": "text", "stabilizeWidth": false, "x": 728, "y": 40, "width": 400, "height": 26, "text": "GPU AND CPU \u00B7 2 MINUTES", "fontSize": 17, "fontWeight": 700, "letterSpacing": 3, "color": "#8fa080", "visibleWhen": "!has(@game.fps)" },
+    { "type": "graph", "x": 720, "y": 80, "width": 600, "height": 320, "windowSeconds": 120, "minimum": 0, "maximum": 100, "gridColor": "#141d10", "gridDivisions": 4, "backgroundColor": "#00000000", "visibleWhen": "!has(@game.fps)",
+      "series": [
+        { "value": "@gpu.load", "color": "#76b900", "thickness": 3, "fill": true, "fillOpacity": 0.2 },
+        { "value": "@cpu.load", "color": "#5bd1ff", "thickness": 2.5 }
+      ] },
+
+    { "type": "shape", "x": 1360, "y": 20, "width": 540, "height": 400, "shape": "rectangle", "fill": "#0b100a", "stroke": "#1b2614", "strokeWidth": 1.5, "cornerRadius": 22 },
+    { "type": "text", "stabilizeWidth": false, "x": 1388, "y": 44, "width": 160, "height": 22, "text": "GPU TEMP", "fontSize": 16, "fontWeight": 700, "letterSpacing": 3, "color": "#8fa080" },
+    { "type": "text", "stabilizeWidth": false, "x": 1388, "y": 68, "width": 160, "height": 64, "text": "{@gpu.temp:0}\u00B0", "fontSize": 56, "fontWeight": 700,
+      "colorStops": [ { "at": 0, "color": "#eef5e6" }, { "at": 75, "color": "#f0c14a" }, { "at": 85, "color": "#ff5d73" } ] },
+    { "type": "text", "stabilizeWidth": false, "x": 1560, "y": 44, "width": 160, "height": 22, "text": "GPU LOAD", "fontSize": 16, "fontWeight": 700, "letterSpacing": 3, "color": "#8fa080" },
+    { "type": "text", "stabilizeWidth": false, "x": 1560, "y": 68, "width": 160, "height": 64, "text": "{@gpu.load:0}%", "fontSize": 56, "fontWeight": 700 },
+    { "type": "text", "stabilizeWidth": false, "x": 1732, "y": 44, "width": 150, "height": 22, "text": "POWER", "fontSize": 16, "fontWeight": 700, "letterSpacing": 3, "color": "#8fa080" },
+    { "type": "text", "stabilizeWidth": false, "x": 1732, "y": 68, "width": 150, "height": 64, "text": "{@gpu.power:0}W", "fontSize": 56, "fontWeight": 700 },
+    { "type": "bar", "x": 1388, "y": 142, "width": 150, "height": 8, "value": "@gpu.temp", "minimum": 20, "maximum": 100, "cornerRadius": 4,
+      "colorStops": [ { "at": 0, "color": "#76b900" }, { "at": 75, "color": "#f0c14a" }, { "at": 85, "color": "#ff5d73" } ] },
+    { "type": "bar", "x": 1560, "y": 142, "width": 150, "height": 8, "value": "@gpu.load", "minimum": 0, "maximum": 100, "cornerRadius": 4, "color": "#76b900" },
+    { "type": "bar", "x": 1732, "y": 142, "width": 150, "height": 8, "value": "@gpu.power", "minimum": 0, "maximum": 350, "cornerRadius": 4, "color": "#f0c14a" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 1388, "y": 184, "width": 160, "height": 22, "text": "CPU LOAD", "fontSize": 16, "fontWeight": 700, "letterSpacing": 3, "color": "#8fa080" },
+    { "type": "text", "stabilizeWidth": false, "x": 1388, "y": 208, "width": 160, "height": 64, "text": "{@cpu.load:0}%", "fontSize": 56, "fontWeight": 700, "color": "#5bd1ff" },
+    { "type": "text", "stabilizeWidth": false, "x": 1560, "y": 184, "width": 160, "height": 22, "text": "CPU TEMP", "fontSize": 16, "fontWeight": 700, "letterSpacing": 3, "color": "#8fa080" },
+    { "type": "text", "stabilizeWidth": false, "x": 1560, "y": 208, "width": 160, "height": 64, "text": "{@cpu.temp:0}\u00B0", "fontSize": 56, "fontWeight": 700, "color": "#5bd1ff" },
+    { "type": "text", "stabilizeWidth": false, "x": 1732, "y": 184, "width": 150, "height": 22, "text": "VRAM", "fontSize": 16, "fontWeight": 700, "letterSpacing": 3, "color": "#8fa080" },
+    { "type": "text", "stabilizeWidth": false, "x": 1732, "y": 208, "width": 150, "height": 64, "text": "{@gpu.vram.used:bytes1}", "fontSize": 44, "fontWeight": 700, "verticalAlign": "middle" },
+    { "type": "bar", "x": 1388, "y": 282, "width": 150, "height": 8, "value": "@cpu.load", "minimum": 0, "maximum": 100, "cornerRadius": 4, "color": "#5bd1ff" },
+    { "type": "bar", "x": 1560, "y": 282, "width": 150, "height": 8, "value": "@cpu.temp", "minimum": 20, "maximum": 100, "cornerRadius": 4, "color": "#5bd1ff" },
+    { "type": "bar", "x": 1732, "y": 282, "width": 150, "height": 8, "value": "@gpu.vram.load", "minimum": 0, "maximum": 100, "cornerRadius": 4, "color": "#3ee0c5" },
+
+    { "type": "shape", "x": 1388, "y": 318, "width": 494, "height": 1, "shape": "rectangle", "fill": "#1b2614" },
+    { "type": "text", "stabilizeWidth": false, "x": 1388, "y": 334, "width": 494, "height": 30, "text": "{@gpu.clock:clock}  \u00B7  fan {@gpu.fan:0} rpm  \u00B7  RAM {@mem.load:0}%", "fontSize": 20, "align": "center", "color": "#b8c4ac" },
+    { "type": "text", "stabilizeWidth": false, "x": 1388, "y": 372, "width": 494, "height": 32, "text": "{@sys.time}", "fontSize": 26, "fontWeight": 700, "align": "center", "color": "#76b900" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 20, "y": 438, "width": 1880, "height": 30, "text": "{@gpu.name}   \u00B7   {@cpu.name}   \u00B7   \u2193 {@net.down:rate}  \u2191 {@net.up:rate}", "fontSize": 20, "align": "center", "color": "#5f6d52" }
+  ]
+}

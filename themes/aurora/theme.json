@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "id": "aurora",
+  "name": "Aurora",
+  "author": "Panelith",
+  "description": "Five glowing ring gauges for CPU, GPU and memory, with the clock up top. Designed for 1920x480.",
+  "canvas": { "width": 1920, "height": 480, "scaling": "fit", "background": "#05080f" },
+  "background": { "color": "#05080f", "gradientTo": "#0e1426", "gradientAngle": 0 },
+  "defaults": { "fontFamily": "Inter", "color": "#eaf2ff", "accentColor": "#3ee0c5", "trackColor": "#151d2c" },
+  "widgets": [
+    { "type": "shape", "x": 40, "y": 64, "width": 340, "height": 340, "shape": "ellipse", "fill": "#3ee0c50c" },
+    { "type": "shape", "x": 415, "y": 64, "width": 340, "height": 340, "shape": "ellipse", "fill": "#2fd3ff0c" },
+    { "type": "shape", "x": 790, "y": 64, "width": 340, "height": 340, "shape": "ellipse", "fill": "#7aa2ff0c" },
+    { "type": "shape", "x": 1165, "y": 64, "width": 340, "height": 340, "shape": "ellipse", "fill": "#b48cff0c" },
+    { "type": "shape", "x": 1540, "y": 64, "width": 340, "height": 340, "shape": "ellipse", "fill": "#f0c14a0a" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 60, "y": 22, "width": 700, "height": 34, "text": "\u25CF  {@sys.host}", "fontSize": 20, "fontWeight": 700, "letterSpacing": 2, "color": "#3ee0c5" },
+    { "type": "text", "stabilizeWidth": false, "x": 1160, "y": 22, "width": 700, "height": 34, "text": "{@sys.date}   {@sys.time}", "fontSize": 22, "fontWeight": 700, "align": "right", "color": "#9fb0c8" },
+
+    { "type": "gauge", "id": "cpu-load", "x": 60, "y": 84, "width": 300, "height": 300, "value": "@cpu.load", "minimum": 0, "maximum": 100, "startAngle": 225, "sweepAngle": 270, "thickness": 22, "color": "#3ee0c5", "trackColor": "#132029" },
+    { "type": "text", "stabilizeWidth": false, "x": 60, "y": 186, "width": 300, "height": 84, "text": "{@cpu.load:0}%", "fontSize": 70, "fontWeight": 700, "align": "center", "verticalAlign": "middle" },
+    { "type": "text", "stabilizeWidth": false, "x": 60, "y": 272, "width": 300, "height": 28, "text": "CPU", "fontSize": 18, "fontWeight": 700, "letterSpacing": 4, "align": "center", "color": "#3ee0c5" },
+    { "type": "text", "stabilizeWidth": false, "x": 30, "y": 400, "width": 360, "height": 30, "text": "{@cpu.clock:clock}   {@cpu.power:0} W", "fontSize": 20, "align": "center", "color": "#8ea0b5" },
+
+    { "type": "gauge", "id": "cpu-temp", "x": 435, "y": 84, "width": 300, "height": 300, "value": "@cpu.temp", "minimum": 20, "maximum": 100, "startAngle": 225, "sweepAngle": 270, "thickness": 22, "trackColor": "#132029",
+      "colorStops": [ { "at": 0, "color": "#2fd3ff" }, { "at": 70, "color": "#f0c14a" }, { "at": 85, "color": "#ff5d73" } ] },
+    { "type": "text", "stabilizeWidth": false, "x": 435, "y": 186, "width": 300, "height": 84, "text": "{@cpu.temp:0}\u00B0", "fontSize": 70, "fontWeight": 700, "align": "center", "verticalAlign": "middle",
+      "colorBinding": "@cpu.temp", "colorStops": [ { "at": 0, "color": "#eaf2ff" }, { "at": 80, "color": "#f0c14a" }, { "at": 90, "color": "#ff5d73" } ] },
+    { "type": "text", "stabilizeWidth": false, "x": 435, "y": 272, "width": 300, "height": 28, "text": "CPU TEMP", "fontSize": 18, "fontWeight": 700, "letterSpacing": 4, "align": "center", "color": "#2fd3ff" },
+    { "type": "text", "stabilizeWidth": false, "x": 405, "y": 400, "width": 360, "height": 30, "text": "peak {maxover(@cpu.temp, 300):0}\u00B0 in 5 min", "fontSize": 20, "align": "center", "color": "#8ea0b5", "visibleWhen": "has(@cpu.temp)" },
+    { "type": "text", "stabilizeWidth": false, "x": 405, "y": 400, "width": 360, "height": 30, "text": "run Panelith as admin", "fontSize": 20, "align": "center", "color": "#5b6b7f", "visibleWhen": "!has(@cpu.temp)" },
+
+    { "type": "gauge", "id": "gpu-load", "x": 810, "y": 84, "width": 300, "height": 300, "value": "@gpu.load", "minimum": 0, "maximum": 100, "startAngle": 225, "sweepAngle": 270, "thickness": 22, "color": "#7aa2ff", "trackColor": "#151b2e" },
+    { "type": "text", "stabilizeWidth": false, "x": 810, "y": 186, "width": 300, "height": 84, "text": "{@gpu.load:0}%", "fontSize": 70, "fontWeight": 700, "align": "center", "verticalAlign": "middle" },
+    { "type": "text", "stabilizeWidth": false, "x": 810, "y": 272, "width": 300, "height": 28, "text": "GPU", "fontSize": 18, "fontWeight": 700, "letterSpacing": 4, "align": "center", "color": "#7aa2ff" },
+    { "type": "text", "stabilizeWidth": false, "x": 780, "y": 400, "width": 360, "height": 30, "text": "{@gpu.clock:clock}   {@gpu.power:0} W", "fontSize": 20, "align": "center", "color": "#8ea0b5" },
+
+    { "type": "gauge", "id": "gpu-temp", "x": 1185, "y": 84, "width": 300, "height": 300, "value": "@gpu.temp", "minimum": 20, "maximum": 100, "startAngle": 225, "sweepAngle": 270, "thickness": 22, "trackColor": "#1a1630",
+      "colorStops": [ { "at": 0, "color": "#b48cff" }, { "at": 75, "color": "#f0c14a" }, { "at": 87, "color": "#ff5d73" } ] },
+    { "type": "text", "stabilizeWidth": false, "x": 1185, "y": 186, "width": 300, "height": 84, "text": "{@gpu.temp:0}\u00B0", "fontSize": 70, "fontWeight": 700, "align": "center", "verticalAlign": "middle" },
+    { "type": "text", "stabilizeWidth": false, "x": 1185, "y": 272, "width": 300, "height": 28, "text": "GPU TEMP", "fontSize": 18, "fontWeight": 700, "letterSpacing": 4, "align": "center", "color": "#b48cff" },
+    { "type": "text", "stabilizeWidth": false, "x": 1155, "y": 400, "width": 360, "height": 30, "text": "fan {@gpu.fan:0} rpm", "fontSize": 20, "align": "center", "color": "#8ea0b5" },
+
+    { "type": "gauge", "id": "mem", "x": 1560, "y": 84, "width": 300, "height": 300, "value": "@mem.load", "minimum": 0, "maximum": 100, "startAngle": 225, "sweepAngle": 270, "thickness": 22, "color": "#f0c14a", "trackColor": "#231f14" },
+    { "type": "text", "stabilizeWidth": false, "x": 1560, "y": 186, "width": 300, "height": 84, "text": "{@mem.load:0}%", "fontSize": 70, "fontWeight": 700, "align": "center", "verticalAlign": "middle" },
+    { "type": "text", "stabilizeWidth": false, "x": 1560, "y": 272, "width": 300, "height": 28, "text": "MEMORY", "fontSize": 18, "fontWeight": 700, "letterSpacing": 4, "align": "center", "color": "#f0c14a" },
+    { "type": "text", "stabilizeWidth": false, "x": 1530, "y": 400, "width": 360, "height": 30, "text": "{@mem.used:bytes1} / {@mem.total:bytes0}", "fontSize": 20, "align": "center", "color": "#8ea0b5" }
+  ]
+}

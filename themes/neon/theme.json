@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "id": "neon",
+  "name": "Neon",
+  "author": "Panelith",
+  "description": "Cyberpunk status board: segmented magenta and cyan bars, condensed type, and a clock that glows.",
+  "canvas": { "width": 1920, "height": 480, "scaling": "fit", "background": "#08040f" },
+  "background": { "color": "#08040f", "gradientTo": "#14072a", "gradientAngle": 90 },
+  "defaults": { "fontFamily": "Bahnschrift", "color": "#f2e9ff", "accentColor": "#00f0ff", "trackColor": "#1d1233" },
+  "widgets": [
+    { "type": "text", "stabilizeWidth": false, "x": 40, "y": 18, "width": 640, "height": 54, "text": "PANELITH//NEON", "fontSize": 40, "fontWeight": 700, "letterSpacing": 8, "color": "#ff2bd6", "strokeColor": "#ff2bd640", "strokeWidth": 6 },
+    { "type": "text", "stabilizeWidth": false, "x": 700, "y": 30, "width": 620, "height": 34, "text": "{@gpu.name}  \u2022  {@cpu.name}", "fontSize": 20, "letterSpacing": 2, "align": "center", "color": "#7d6aa8" },
+    { "type": "text", "stabilizeWidth": false, "x": 1440, "y": 8, "width": 440, "height": 70, "text": "{@sys.time}", "fontSize": 62, "fontWeight": 700, "align": "right", "color": "#00f0ff", "strokeColor": "#00f0ff38", "strokeWidth": 8, "letterSpacing": 4 },
+    { "type": "shape", "x": 40, "y": 84, "width": 1840, "height": 3, "shape": "rectangle", "fill": "#ff2bd6", "gradientTo": "#00f0ff", "gradientAngle": 0 },
+
+    { "type": "text", "stabilizeWidth": false, "x": 40, "y": 112, "width": 400, "height": 30, "text": "CPU LOAD", "fontSize": 22, "letterSpacing": 5, "color": "#8a7fb0" },
+    { "type": "text", "stabilizeWidth": false, "x": 640, "y": 100, "width": 260, "height": 48, "text": "{@cpu.load:0}%", "fontSize": 44, "fontWeight": 700, "align": "right", "color": "#00f0ff" },
+    { "type": "bar", "x": 40, "y": 152, "width": 860, "height": 36, "value": "@cpu.load", "minimum": 0, "maximum": 100, "segments": 40, "segmentGap": 5, "cornerRadius": 2, "color": "#00f0ff", "trackColor": "#1d1233" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 40, "y": 222, "width": 400, "height": 30, "text": "CPU TEMP", "fontSize": 22, "letterSpacing": 5, "color": "#8a7fb0" },
+    { "type": "text", "stabilizeWidth": false, "x": 640, "y": 210, "width": 260, "height": 48, "text": "{@cpu.temp:0}\u00B0", "fontSize": 44, "fontWeight": 700, "align": "right", "color": "#ff2bd6" },
+    { "type": "bar", "x": 40, "y": 262, "width": 860, "height": 36, "value": "@cpu.temp", "minimum": 20, "maximum": 100, "segments": 40, "segmentGap": 5, "cornerRadius": 2, "trackColor": "#1d1233",
+      "colorStops": [ { "at": 0, "color": "#ff2bd6" }, { "at": 85, "color": "#f9f002" } ] },
+
+    { "type": "text", "stabilizeWidth": false, "x": 40, "y": 332, "width": 400, "height": 30, "text": "MEMORY", "fontSize": 22, "letterSpacing": 5, "color": "#8a7fb0" },
+    { "type": "text", "stabilizeWidth": false, "x": 500, "y": 320, "width": 400, "height": 48, "text": "{@mem.used:bytes1}", "fontSize": 44, "fontWeight": 700, "align": "right", "color": "#f9f002" },
+    { "type": "bar", "x": 40, "y": 372, "width": 860, "height": 36, "value": "@mem.load", "minimum": 0, "maximum": 100, "segments": 40, "segmentGap": 5, "cornerRadius": 2, "color": "#f9f002", "trackColor": "#1d1233" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 1020, "y": 112, "width": 400, "height": 30, "text": "GPU LOAD", "fontSize": 22, "letterSpacing": 5, "color": "#8a7fb0" },
+    { "type": "text", "stabilizeWidth": false, "x": 1620, "y": 100, "width": 260, "height": 48, "text": "{@gpu.load:0}%", "fontSize": 44, "fontWeight": 700, "align": "right", "color": "#00f0ff" },
+    { "type": "bar", "x": 1020, "y": 152, "width": 860, "height": 36, "value": "@gpu.load", "minimum": 0, "maximum": 100, "segments": 40, "segmentGap": 5, "cornerRadius": 2, "color": "#00f0ff", "trackColor": "#1d1233" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 1020, "y": 222, "width": 400, "height": 30, "text": "GPU TEMP", "fontSize": 22, "letterSpacing": 5, "color": "#8a7fb0" },
+    { "type": "text", "stabilizeWidth": false, "x": 1620, "y": 210, "width": 260, "height": 48, "text": "{@gpu.temp:0}\u00B0", "fontSize": 44, "fontWeight": 700, "align": "right", "color": "#ff2bd6" },
+    { "type": "bar", "x": 1020, "y": 262, "width": 860, "height": 36, "value": "@gpu.temp", "minimum": 20, "maximum": 100, "segments": 40, "segmentGap": 5, "cornerRadius": 2, "trackColor": "#1d1233",
+      "colorStops": [ { "at": 0, "color": "#ff2bd6" }, { "at": 85, "color": "#f9f002" } ] },
+
+    { "type": "text", "stabilizeWidth": false, "x": 1020, "y": 332, "width": 400, "height": 30, "text": "VRAM", "fontSize": 22, "letterSpacing": 5, "color": "#8a7fb0" },
+    { "type": "text", "stabilizeWidth": false, "x": 1480, "y": 320, "width": 400, "height": 48, "text": "{@gpu.vram.used:bytes1}", "fontSize": 44, "fontWeight": 700, "align": "right", "color": "#f9f002" },
+    { "type": "bar", "x": 1020, "y": 372, "width": 860, "height": 36, "value": "@gpu.vram.load", "minimum": 0, "maximum": 100, "segments": 40, "segmentGap": 5, "cornerRadius": 2, "color": "#f9f002", "trackColor": "#1d1233" },
+
+    { "type": "shape", "x": 40, "y": 430, "width": 1840, "height": 1, "shape": "rectangle", "fill": "#2a1a45" },
+    { "type": "text", "stabilizeWidth": false, "x": 40, "y": 440, "width": 1840, "height": 30,
+      "text": "NET DN {@net.down:rate}  UP {@net.up:rate}     //     GPU {@gpu.clock:clock}  {@gpu.power:0}W     //     UPTIME {@sys.uptime:duration}     //     {@sys.date}",
+      "fontSize": 20, "letterSpacing": 2, "align": "center", "color": "#7d6aa8" }
+  ]
+}

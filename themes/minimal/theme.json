@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "id": "minimal",
+  "name": "Minimal",
+  "author": "Panelith",
+  "description": "A large clock and date beside four quiet columns for CPU, GPU, memory and network. Pure black, easy on the eyes.",
+  "canvas": { "width": 1920, "height": 480, "scaling": "fit", "background": "#000000" },
+  "background": { "color": "#000000" },
+  "defaults": { "fontFamily": "Segoe UI Variable Display", "color": "#f5f5f5", "accentColor": "#f5f5f5", "trackColor": "#1c1c1c" },
+  "widgets": [
+    { "type": "text", "stabilizeWidth": false, "x": 60, "y": 36, "width": 760, "height": 270, "text": "{@sys.time}", "fontSize": 230, "fontWeight": 300, "verticalAlign": "middle", "letterSpacing": -4 },
+    { "type": "text", "stabilizeWidth": false, "x": 68, "y": 314, "width": 760, "height": 56, "text": "{@sys.date}", "fontSize": 44, "fontWeight": 400, "color": "#8a8a8a" },
+    { "type": "text", "stabilizeWidth": false, "x": 68, "y": 392, "width": 760, "height": 34, "text": "{@sys.host}  \u00B7  up {@sys.uptime:duration}", "fontSize": 24, "color": "#4d4d4d" },
+
+    { "type": "shape", "x": 860, "y": 70, "width": 2, "height": 340, "shape": "rectangle", "fill": "#1a1a1a" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 920, "y": 96, "width": 210, "height": 30, "text": "CPU", "fontSize": 22, "fontWeight": 600, "letterSpacing": 4, "color": "#6b6b6b" },
+    { "type": "text", "stabilizeWidth": false, "x": 920, "y": 132, "width": 210, "height": 110, "text": "{@cpu.load:0}%", "fontSize": 88, "fontWeight": 300 },
+    { "type": "text", "stabilizeWidth": false, "x": 920, "y": 248, "width": 210, "height": 34, "text": "{@cpu.temp:0}\u00B0C", "fontSize": 28,
+      "colorBinding": "@cpu.temp", "colorStops": [ { "at": 0, "color": "#8a8a8a" }, { "at": 80, "color": "#f0c14a" }, { "at": 90, "color": "#ff5d73" } ] },
+    { "type": "text", "stabilizeWidth": false, "x": 920, "y": 284, "width": 210, "height": 30, "text": "{@cpu.clock:clock}", "fontSize": 22, "color": "#4d4d4d" },
+    { "type": "bar", "x": 920, "y": 340, "width": 200, "height": 6, "value": "@cpu.load", "minimum": 0, "maximum": 100, "cornerRadius": 3, "color": "#f5f5f5", "trackColor": "#1c1c1c" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 1160, "y": 96, "width": 210, "height": 30, "text": "GPU", "fontSize": 22, "fontWeight": 600, "letterSpacing": 4, "color": "#6b6b6b" },
+    { "type": "text", "stabilizeWidth": false, "x": 1160, "y": 132, "width": 210, "height": 110, "text": "{@gpu.load:0}%", "fontSize": 88, "fontWeight": 300 },
+    { "type": "text", "stabilizeWidth": false, "x": 1160, "y": 248, "width": 210, "height": 34, "text": "{@gpu.temp:0}\u00B0C", "fontSize": 28,
+      "colorBinding": "@gpu.temp", "colorStops": [ { "at": 0, "color": "#8a8a8a" }, { "at": 78, "color": "#f0c14a" }, { "at": 88, "color": "#ff5d73" } ] },
+    { "type": "text", "stabilizeWidth": false, "x": 1160, "y": 284, "width": 210, "height": 30, "text": "{@gpu.power:0} W", "fontSize": 22, "color": "#4d4d4d" },
+    { "type": "bar", "x": 1160, "y": 340, "width": 200, "height": 6, "value": "@gpu.load", "minimum": 0, "maximum": 100, "cornerRadius": 3, "color": "#f5f5f5", "trackColor": "#1c1c1c" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 1400, "y": 96, "width": 210, "height": 30, "text": "MEMORY", "fontSize": 22, "fontWeight": 600, "letterSpacing": 4, "color": "#6b6b6b" },
+    { "type": "text", "stabilizeWidth": false, "x": 1400, "y": 132, "width": 210, "height": 110, "text": "{@mem.load:0}%", "fontSize": 88, "fontWeight": 300 },
+    { "type": "text", "stabilizeWidth": false, "x": 1400, "y": 248, "width": 210, "height": 34, "text": "{@mem.used:bytes1}", "fontSize": 28, "color": "#8a8a8a" },
+    { "type": "text", "stabilizeWidth": false, "x": 1400, "y": 284, "width": 210, "height": 30, "text": "of {@mem.total:bytes0}", "fontSize": 22, "color": "#4d4d4d" },
+    { "type": "bar", "x": 1400, "y": 340, "width": 200, "height": 6, "value": "@mem.load", "minimum": 0, "maximum": 100, "cornerRadius": 3, "color": "#f5f5f5", "trackColor": "#1c1c1c" },
+
+    { "type": "text", "stabilizeWidth": false, "x": 1640, "y": 96, "width": 240, "height": 30, "text": "NETWORK", "fontSize": 22, "fontWeight": 600, "letterSpacing": 4, "color": "#6b6b6b" },
+    { "type": "text", "stabilizeWidth": false, "x": 1640, "y": 132, "width": 240, "height": 110, "text": "{@net.down:rate0}", "fontSize": 60, "fontWeight": 300, "verticalAlign": "middle" },
+    { "type": "text", "stabilizeWidth": false, "x": 1640, "y": 248, "width": 240, "height": 34, "text": "\u2191 {@net.up:rate}", "fontSize": 28, "color": "#8a8a8a" },
+    { "type": "text", "stabilizeWidth": false, "x": 1640, "y": 284, "width": 240, "height": 30, "text": "download / upload", "fontSize": 22, "color": "#4d4d4d" },
+    { "type": "graph", "x": 1640, "y": 322, "width": 220, "height": 40, "windowSeconds": 60, "minimum": 0, "backgroundColor": "#00000000",
+      "series": [ { "value": "@net.down", "color": "#f5f5f5", "thickness": 2, "fill": true, "fillOpacity": 0.12 } ] }
+  ]
+}

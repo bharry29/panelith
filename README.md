@@ -1,6 +1,6 @@
-# RigGlass
+# Panelith
 
-RigGlass draws a live sensor theme on a USB panel. It was built for the Thermalright Trofeo Vision and also speaks the protocols used by other small USB screens, so one theme is not locked to one brand.
+Panelith draws a live sensor theme on a USB panel. It was built for the Thermalright Trofeo Vision and also speaks the protocols used by other small USB screens, so one theme is not locked to one brand.
 
 The first screen it knows how to drive:
 
@@ -10,32 +10,32 @@ The first screen it knows how to drive:
 | Trofeo Vision 9.16" (LY1 firmware) | `0416:5409` | USB bulk, JPEG |
 | Trofeo Vision 6.86" | `0416:5302` | USB HID, JPEG, 1280×480 |
 
-`0416:5302` is also used by some Thermalright cooler screens. RigGlass prefers the 6.86" panel for that id. If you actually have a cooler screen, pin it:
+`0416:5302` is also used by some Thermalright cooler screens. Panelith prefers the 6.86" panel for that id. If you actually have a cooler screen, pin it:
 
 ```bash
-rigglass run --profile thermalright.frozen-magic-hid
+panelith run --profile thermalright.frozen-magic-hid
 ```
 
-RigGlass is not affiliated with Thermalright, Turing, or any other panel vendor. Close the vendor's own tool (Thermalright TRCC, for example) before RigGlass opens the panel. Those tools keep the device to themselves.
+Panelith is not affiliated with Thermalright, Turing, or any other panel vendor. Close the vendor's own tool (Thermalright TRCC, for example) before Panelith opens the panel. Those tools keep the device to themselves.
 
 ## Run it
 
 You need the .NET 10 SDK.
 
 ```bash
-dotnet run --project src/RigGlass.Cli -- devices
-dotnet run --project src/RigGlass.Cli -- preview --trofeo
-dotnet run --project src/RigGlass.Cli -- run
+dotnet run --project src/Panelith.Cli -- devices
+dotnet run --project src/Panelith.Cli -- preview --trofeo
+dotnet run --project src/Panelith.Cli -- run
 ```
 
-`devices` lists what is plugged in and the stable key to pin in `rigglass.json`. `preview` writes a PNG of the bundled `rig` theme, including 1280×480 and 1920×480 Trofeo sizes when you pass `--trofeo`. `run` draws that theme on every attached panel until you press Ctrl+C.
+`devices` lists what is plugged in and the stable key to pin in `panelith.json`. `preview` writes a PNG of the bundled `rig` theme, including 1280×480 and 1920×480 Trofeo sizes when you pass `--trofeo`. `run` draws that theme on every attached panel until you press Ctrl+C.
 
 Other commands: `profiles`, `theme list`, `theme validate`, `doctor`.
 
 On Linux the panel is usually invisible to a normal user until udev allows it:
 
 ```bash
-sudo dotnet run --project src/RigGlass.Cli -- doctor --install-udev-rules
+sudo dotnet run --project src/Panelith.Cli -- doctor --install-udev-rules
 ```
 
 Unplug the panel and plug it back in, then run `devices` again. `doctor` also checks that libusb is installed (`sudo apt install libusb-1.0-0` on Debian and Ubuntu).
@@ -46,14 +46,14 @@ Rotation defaults to the panel's native orientation, which is already landscape 
 
 ## Configuration
 
-Set `RIGGLASS_HOME` to move the whole configuration tree. Otherwise RigGlass uses `$XDG_CONFIG_HOME/rigglass` on Linux, `%APPDATA%\RigGlass` on Windows, and `~/Library/Application Support/RigGlass` on macOS.
+Set `PANELITH_HOME` to move the whole configuration tree. Otherwise Panelith uses `$XDG_CONFIG_HOME/panelith` on Linux, `%APPDATA%\Panelith` on Windows, and `~/Library/Application Support/Panelith` on macOS.
 
-`rigglass.json` can pin a theme, a frame rate, or a profile to the stable key printed by `devices`. Themes you add go in the `themes` folder, one directory per theme with a `theme.json` inside. The bundled theme is `themes/rig`. It is drawn at 1280×480 and anchors its side columns, so the same file fills a 1920×480 panel without a second copy.
+`panelith.json` can pin a theme, a frame rate, or a profile to the stable key printed by `devices`. Themes you add go in the `themes` folder, one directory per theme with a `theme.json` inside. The bundled theme is `themes/rig`. It is drawn at 1280×480 and anchors its side columns, so the same file fills a 1920×480 panel without a second copy.
 
 ## Build
 
 ```bash
-dotnet test RigGlass.slnx
+dotnet test Panelith.slnx
 ```
 
 The solution is .NET 10. Tests do not need a panel. A virtual panel exercises the same render and send loop the hardware uses.

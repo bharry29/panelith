@@ -1,0 +1,361 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Panelith.App.ViewModels"
+             xmlns:c="using:Panelith.App.Controls"
+             x:Class="Panelith.App.Views.ProfilesView"
+             x:DataType="vm:ProfilesViewModel">
+  <Grid ColumnDefinitions="380,*" Margin="28,22,12,0">
+
+    <!-- Profile list -->
+    <DockPanel Grid.Column="0" Margin="0,0,18,22">
+      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,16">
+        <TextBlock Text="Profiles" Classes="h1" />
+        <TextBlock Classes="muted" TextWrapping="Wrap"
+                   Text="Each profile is a set of screens that comes up by itself: when a game or app starts, on a schedule, or when you step away. Higher in the list wins." />
+      </StackPanel>
+
+      <Border DockPanel.Dock="Top" Classes="card" Padding="14" Margin="0,0,0,14">
+        <StackPanel Spacing="10">
+          <DockPanel>
+            <ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding Automatic}" OnContent="" OffContent="" />
+            <StackPanel Spacing="2" VerticalAlignment="Center">
+              <TextBlock Text="Automatic switching" FontWeight="SemiBold" />
+              <TextBlock Classes="muted" FontSize="12" Text="Off: only the profile you pin, or the default." TextWrapping="Wrap" />
+            </StackPanel>
+          </DockPanel>
+          <Border Classes="pill" Padding="12,7" HorizontalAlignment="Stretch">
+            <TextBlock Text="{Binding ActiveText}" FontSize="12" TextWrapping="Wrap" />
+          </Border>
+          <Button Classes="ghost" HorizontalAlignment="Stretch" IsVisible="{Binding IsPinned}" Command="{Binding UnpinCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+              <PathIcon Data="{x:Static vm:Icons.Pin}" Width="13" Height="13" />
+              <TextBlock Text="Unpin and switch automatically" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Border>
+
+      <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,12,0,0">
+        <Button Classes="accent" Command="{Binding NewProfileCommand}" ToolTip.Tip="Add a profile">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <PathIcon Data="{x:Static vm:Icons.Add}" Width="13" Height="13" />
+            <TextBlock Text="New" />
+          </StackPanel>
+        </Button>
+        <Button Classes="ghost" Command="{Binding DuplicateCommand}" ToolTip.Tip="Duplicate the selected profile">
+          <PathIcon Data="{x:Static vm:Icons.Copy}" Width="14" Height="14" />
+        </Button>
+        <Button Classes="ghost" Command="{Binding MoveUpCommand}" ToolTip.Tip="Higher priority">
+          <PathIcon Data="{x:Static vm:Icons.Up}" Width="16" Height="16" />
+        </Button>
+        <Button Classes="ghost" Command="{Binding MoveDownCommand}" ToolTip.Tip="Lower priority">
+          <PathIcon Data="{x:Static vm:Icons.Down}" Width="16" Height="16" />
+        </Button>
+        <Button Classes="ghost" Command="{Binding DeleteCommand}" ToolTip.Tip="Delete the selected profile">
+          <PathIcon Data="{x:Static vm:Icons.Delete}" Width="14" Height="14" Foreground="{StaticResource DangerBrush}" />
+        </Button>
+      </StackPanel>
+
+      <ListBox Classes="profiles" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:ProfileItemViewModel">
+            <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto">
+              <Border Grid.RowSpan="2" Width="38" Height="38" CornerRadius="10" Background="{Binding AccentSoftBrush}" VerticalAlignment="Top">
+                <PathIcon Data="{Binding Icon}" Width="18" Height="18" Foreground="{Binding AccentBrush}" />
+              </Border>
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" Opacity="{Binding Enabled, Converter={x:Static vm:Converters.DimWhenFalse}}" />
+                <Border Classes="pill" Padding="7,1" Background="{Binding AccentSoftBrush}" IsVisible="{Binding IsActive}">
+                  <TextBlock Text="ACTIVE" FontSize="10" FontWeight="Bold" Foreground="{Binding AccentBrush}" />
+                </Border>
+                <PathIcon Data="{x:Static vm:Icons.Pin}" Width="12" Height="12" Foreground="{Binding AccentBrush}" IsVisible="{Binding IsPinned}" ToolTip.Tip="Pinned" />
+              </StackPanel>
+              <ToggleSwitch Grid.Column="2" Grid.RowSpan="2" IsChecked="{Binding Enabled}" OnContent="" OffContent="" VerticalAlignment="Top" Margin="0,-4,-8,0"
+                            ToolTip.Tip="Let this profile turn on by itself" />
+              <TextBlock Grid.Column="1" Grid.Row="1" Margin="12,2,0,0" Text="{Binding Summary}" Classes="muted" FontSize="12" TextTrimming="CharacterEllipsis" />
+              <ItemsControl Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="2" Margin="12,8,0,0" ItemsSource="{Binding Thumbs}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="6" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:ScreenThumb">
+                    <Border Background="#000000" CornerRadius="5" Padding="2" Width="92" ToolTip.Tip="{Binding Name}">
+                      <c:FrameView Frame="{Binding Frame}" AspectRatio="{Binding AspectRatio}" Radius="3" />
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </DockPanel>
+
+    <!-- Editor -->
+    <ScrollViewer Grid.Column="1">
+      <ContentControl Content="{Binding Editor}" Margin="0,0,16,28">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="vm:ProfileEditorViewModel">
+            <StackPanel Spacing="16">
+
+              <!-- Identity -->
+              <Border Classes="card">
+                <StackPanel Spacing="14">
+                  <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                      <Button Classes="accent" Command="{Binding $parent[UserControl].((vm:ProfilesViewModel)DataContext).TogglePinSelectedCommand}"
+                              IsVisible="{Binding !IsPinned}" ToolTip.Tip="Put this profile on the panel now and hold it">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <PathIcon Data="{x:Static vm:Icons.Pin}" Width="13" Height="13" />
+                          <TextBlock Text="Use now" />
+                        </StackPanel>
+                      </Button>
+                      <Button Classes="ghost" Command="{Binding $parent[UserControl].((vm:ProfilesViewModel)DataContext).TogglePinSelectedCommand}"
+                              IsVisible="{Binding IsPinned}" Content="Unpin" />
+                    </StackPanel>
+                    <TextBox Text="{Binding Name}" FontSize="20" FontWeight="SemiBold" Width="320" HorizontalAlignment="Left" />
+                  </DockPanel>
+                  <WrapPanel ItemSpacing="18" LineSpacing="10">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="COLOUR" Classes="label" />
+                      <ListBox Classes="swatches" ItemsSource="{Binding Accents}" SelectedItem="{Binding Accent}">
+                        <ListBox.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="4" />
+                          </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                          <DataTemplate x:DataType="vm:AccentChoice">
+                            <Ellipse Width="20" Height="20" Fill="{Binding Brush}" />
+                          </DataTemplate>
+                        </ListBox.ItemTemplate>
+                      </ListBox>
+                    </StackPanel>
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="ICON" Classes="label" />
+                      <ListBox Classes="swatches" ItemsSource="{Binding IconChoices}" SelectedItem="{Binding Icon}">
+                        <ListBox.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="4" />
+                          </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                          <DataTemplate x:DataType="vm:IconChoice">
+                            <PathIcon Data="{Binding Geometry}" Width="18" Height="18" />
+                          </DataTemplate>
+                        </ListBox.ItemTemplate>
+                      </ListBox>
+                    </StackPanel>
+                  </WrapPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="24">
+                    <CheckBox Content="Can turn on by itself" IsChecked="{Binding Enabled}" />
+                    <CheckBox Content="Default when nothing else applies" IsChecked="{Binding IsDefault}" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <!-- Screens -->
+              <Border Classes="card">
+                <StackPanel Spacing="12">
+                  <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                      <CheckBox Content="Rotate every" IsChecked="{Binding Rotate}" />
+                      <NumericUpDown Value="{Binding RotationSeconds}" Minimum="5" Maximum="600" Increment="5" FormatString="0" Width="120" IsEnabled="{Binding Rotate}" />
+                      <TextBlock Text="seconds" Classes="muted" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Spacing="2">
+                      <TextBlock Text="Screens" Classes="h2" />
+                      <TextBlock Text="The first one comes up when the profile starts." Classes="muted" FontSize="12" />
+                    </StackPanel>
+                  </DockPanel>
+                  <ItemsControl ItemsSource="{Binding Screens}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ScreenThumb">
+                        <Border Background="{StaticResource Surface2Brush}" CornerRadius="10" Padding="8" Margin="0,0,10,10" Width="250">
+                          <StackPanel Spacing="6">
+                            <Border Background="#000000" CornerRadius="6" Padding="3">
+                              <c:FrameView Frame="{Binding Frame}" AspectRatio="{Binding AspectRatio}" Radius="4" />
+                            </Border>
+                            <DockPanel>
+                              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="2">
+                                <Button Classes="icon" Command="{Binding $parent[ItemsControl].((vm:ProfileEditorViewModel)DataContext).MoveScreenUpCommand}" CommandParameter="{Binding}" ToolTip.Tip="Earlier">
+                                  <PathIcon Data="{x:Static vm:Icons.Up}" Width="14" Height="14" RenderTransform="rotate(-90deg)" />
+                                </Button>
+                                <Button Classes="icon" Command="{Binding $parent[ItemsControl].((vm:ProfileEditorViewModel)DataContext).MoveScreenDownCommand}" CommandParameter="{Binding}" ToolTip.Tip="Later">
+                                  <PathIcon Data="{x:Static vm:Icons.Down}" Width="14" Height="14" RenderTransform="rotate(-90deg)" />
+                                </Button>
+                                <Button Classes="icon" Command="{Binding $parent[ItemsControl].((vm:ProfileEditorViewModel)DataContext).RemoveScreenCommand}" CommandParameter="{Binding}" ToolTip.Tip="Remove">
+                                  <PathIcon Data="{x:Static vm:Icons.Close}" Width="12" Height="12" />
+                                </Button>
+                              </StackPanel>
+                              <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                            </DockPanel>
+                          </StackPanel>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <ComboBox ItemsSource="{Binding AddableScreens}" SelectedItem="{Binding ScreenToAdd}" PlaceholderText="Add a screen…" Width="280">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ScreenThumb">
+                        <TextBlock Text="{Binding Name}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+              </Border>
+
+              <!-- Triggers -->
+              <Border Classes="card">
+                <StackPanel Spacing="16">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="When" Classes="h2" />
+                    <TextBlock Text="Any one of these brings the profile up. Leave them all empty for a profile you only pick by hand." Classes="muted" FontSize="12" TextWrapping="Wrap" />
+                  </StackPanel>
+
+                  <!-- Games -->
+                  <StackPanel Spacing="8">
+                    <CheckBox IsChecked="{Binding DetectGames}">
+                      <StackPanel Spacing="2">
+                        <TextBlock Text="Any game starts" FontWeight="SemiBold" />
+                        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                                   Text="Games from Steam, Epic, Xbox, EA, Ubisoft, GOG and Riot libraries, anything RivaTuner is measuring, and the programs listed below." />
+                      </StackPanel>
+                    </CheckBox>
+                    <CheckBox IsChecked="{Binding DetectFullscreen}" IsEnabled="{Binding DetectGames}" Margin="28,0,0,0"
+                              Content="Also count a fullscreen window that keeps the GPU above 50% for 10 seconds" />
+                  </StackPanel>
+
+                  <!-- Apps -->
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="These programs are running" FontWeight="SemiBold" />
+                    <ItemsControl ItemsSource="{Binding Apps}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <WrapPanel />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                          <Border Classes="pill" Margin="0,0,6,6" Padding="10,3,4,3">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                              <TextBlock Text="{Binding}" FontSize="12" VerticalAlignment="Center" />
+                              <Button Classes="icon" Command="{Binding $parent[ItemsControl].((vm:ProfileEditorViewModel)DataContext).RemoveAppCommand}" CommandParameter="{Binding}">
+                                <PathIcon Data="{x:Static vm:Icons.Close}" Width="9" Height="9" />
+                              </Button>
+                            </StackPanel>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <WrapPanel>
+                      <TextBox Text="{Binding NewApp}" Watermark="Name, e.g. Resolve or vegas*" Width="220" Margin="0,0,8,8" KeyDown="OnNewAppKeyDown" />
+                      <Button Classes="ghost" Content="Add" Command="{Binding AddAppCommand}" CommandParameter="{x:Null}" Margin="0,0,8,8" />
+                      <ComboBox ItemsSource="{Binding RunningApps}" SelectedItem="{Binding RunningAppToAdd}" PlaceholderText="Running now…" Width="190" Margin="0,0,8,8"
+                                DropDownOpened="OnRunningAppsOpened" />
+                      <ComboBox ItemsSource="{Binding SuggestedApps}" SelectedItem="{Binding SuggestedAppToAdd}" PlaceholderText="Suggestions…" Width="190" Margin="0,0,8,8" />
+                      <Button Classes="ghost" Content="Browse…" Click="OnBrowseApp" Margin="0,0,8,8" ToolTip.Tip="Pick a program file" />
+                    </WrapPanel>
+                  </StackPanel>
+
+                  <!-- Away -->
+                  <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                      <CheckBox Content="No keyboard or mouse for" IsChecked="{Binding IdleEnabled}" />
+                      <NumericUpDown Value="{Binding IdleMinutes}" Minimum="1" Maximum="240" FormatString="0" Width="110" IsEnabled="{Binding IdleEnabled}" />
+                      <TextBlock Text="minutes" Classes="muted" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <CheckBox Content="Windows is locked" IsChecked="{Binding OnLock}" />
+                  </StackPanel>
+
+                  <!-- Schedules -->
+                  <StackPanel Spacing="8">
+                    <DockPanel>
+                      <Button DockPanel.Dock="Right" Classes="ghost" Command="{Binding AddScheduleCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <PathIcon Data="{x:Static vm:Icons.Add}" Width="12" Height="12" />
+                          <TextBlock Text="Add time" />
+                        </StackPanel>
+                      </Button>
+                      <StackPanel Spacing="2">
+                        <TextBlock Text="On a schedule" FontWeight="SemiBold" />
+                        <TextBlock Text="A time range that ends earlier than it starts runs past midnight." Classes="muted" FontSize="12" />
+                      </StackPanel>
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding Schedules}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ScheduleViewModel">
+                          <Border Background="{StaticResource Surface2Brush}" CornerRadius="10" Padding="10" Margin="0,0,0,8">
+                            <WrapPanel>
+                              <TimePicker SelectedTime="{Binding Start}" ClockIdentifier="24HourClock" Margin="0,0,8,4" />
+                              <TextBlock Text="to" Classes="muted" VerticalAlignment="Center" Margin="0,0,8,4" />
+                              <TimePicker SelectedTime="{Binding End}" ClockIdentifier="24HourClock" Margin="0,0,16,4" />
+                              <ToggleButton Classes="day" Content="Mon" IsChecked="{Binding Monday}" />
+                              <ToggleButton Classes="day" Content="Tue" IsChecked="{Binding Tuesday}" />
+                              <ToggleButton Classes="day" Content="Wed" IsChecked="{Binding Wednesday}" />
+                              <ToggleButton Classes="day" Content="Thu" IsChecked="{Binding Thursday}" />
+                              <ToggleButton Classes="day" Content="Fri" IsChecked="{Binding Friday}" />
+                              <ToggleButton Classes="day" Content="Sat" IsChecked="{Binding Saturday}" />
+                              <ToggleButton Classes="day" Content="Sun" IsChecked="{Binding Sunday}" />
+                              <Button Classes="icon" Margin="8,0,0,4" ToolTip.Tip="Remove"
+                                      Command="{Binding $parent[ItemsControl].((vm:ProfileEditorViewModel)DataContext).RemoveScheduleCommand}" CommandParameter="{Binding}">
+                                <PathIcon Data="{x:Static vm:Icons.Delete}" Width="13" Height="13" />
+                              </Button>
+                            </WrapPanel>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+
+                  <!-- Hotkey -->
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="Shortcut" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBox Text="{Binding Hotkey}" Watermark="Click, then press e.g. Ctrl+Alt+1" Width="240" KeyDown="OnHotkeyKeyDown" />
+                      <Button Classes="ghost" Content="Clear" Command="{Binding ClearHotkeyCommand}" />
+                    </StackPanel>
+                    <TextBlock Classes="muted" FontSize="12" Text="Pins this profile from anywhere. Press it again to go back to automatic." />
+                    <TextBlock Text="{Binding HotkeyError}" Foreground="{StaticResource WarnBrush}" FontSize="12"
+                               IsVisible="{Binding HotkeyError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <!-- Panel -->
+              <Border Classes="card">
+                <StackPanel Spacing="14">
+                  <TextBlock Text="Panel" Classes="h2" />
+                  <Grid ColumnDefinitions="220,*,70">
+                    <StackPanel Spacing="2">
+                      <TextBlock Text="Dim" FontWeight="SemiBold" />
+                      <TextBlock Text="Darkens the picture. 100% turns the panel black." Classes="muted" FontSize="12" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Slider Grid.Column="1" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding DimPercent}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding DimPercent, StringFormat='{}{0}%'}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                  </Grid>
+                  <Grid ColumnDefinitions="220,*,70">
+                    <StackPanel Spacing="2">
+                      <CheckBox Content="Own frame rate" IsChecked="{Binding FrameRateOverride}" FontWeight="SemiBold" />
+                      <TextBlock Text="Lower costs less CPU while gaming. Switching reconnects the panel." Classes="muted" FontSize="12" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Slider Grid.Column="1" Minimum="1" Maximum="15" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding FramesPerSecond}" VerticalAlignment="Center"
+                            IsEnabled="{Binding FrameRateOverride}" />
+                    <TextBlock Grid.Column="2" Text="{Binding FramesPerSecond, StringFormat='{}{0} fps'}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                  </Grid>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

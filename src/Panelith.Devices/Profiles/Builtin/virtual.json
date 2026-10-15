@@ -1,0 +1,24 @@
+[
+  {
+    "id": "panelith.virtual",
+    "vendor": "Panelith",
+    "model": "Virtual panel",
+    "driver": "virtual",
+    "usb": [],
+    "width": 1280,
+    "height": 480,
+    "pixelFormat": "rgba8888",
+    "transport": "virtual",
+    "probe": "none",
+    "capabilities": {
+      "supportsBrightness": true,
+      "supportsScreenPower": true,
+      "supportsPartialUpdate": true,
+      "supportsHardwareOrientation": true,
+      "maxFramesPerSecond": 60,
+      "requiresExclusiveAccess": false
+    },
+    "support": "verified",
+    "notes": "Always present. Renders to PNG files or to the live preview instead of to hardware, so themes can be designed, validated and demonstrated with no panel attached. Its resolution can be set per instance."
+  }
+]

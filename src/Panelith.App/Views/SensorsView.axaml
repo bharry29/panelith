@@ -1,0 +1,69 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Panelith.App.ViewModels"
+             x:Class="Panelith.App.Views.SensorsView"
+             x:DataType="vm:SensorsViewModel">
+  <UserControl.Resources>
+    <DataTemplate x:Key="RowTemplate" x:DataType="vm:SensorRowViewModel">
+      <Border Classes="row">
+        <Grid ColumnDefinitions="2*,1.2*,2.4*,1.4*">
+          <TextBlock Grid.Column="0" Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Text="{Binding Value}" FontWeight="SemiBold" VerticalAlignment="Center"
+                     Foreground="{StaticResource TextBrush}" Opacity="{Binding HasValue, Converter={x:Static vm:Converters.DimWhenFalse}}" />
+          <SelectableTextBlock Grid.Column="2" Text="{Binding Reference}" Classes="mono" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+          <TextBlock Grid.Column="3" Text="{Binding Source}" Classes="faint mono" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+        </Grid>
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <Grid RowDefinitions="Auto,Auto,*" Margin="28,22,28,0">
+    <DockPanel Grid.Row="0" Margin="0,0,0,16">
+      <TextBox DockPanel.Dock="Right" Width="300" Watermark="Filter, e.g. gpu or temp" Text="{Binding Filter}" VerticalAlignment="Center" />
+      <StackPanel Spacing="4">
+        <TextBlock Text="Sensors" Classes="h1" />
+        <TextBlock Text="{Binding Summary}" Classes="muted" />
+      </StackPanel>
+    </DockPanel>
+
+    <Border Grid.Row="1" Classes="banner" Margin="0,0,0,16" IsVisible="{Binding NeedsElevation}">
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Classes="accent"
+                Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).Settings.RestartAsAdministratorCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <PathIcon Data="{x:Static vm:Icons.Shield}" Width="14" Height="14" />
+            <TextBlock Text="Restart as administrator" />
+          </StackPanel>
+        </Button>
+        <TextBlock VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,16,0"
+                   Text="CPU temperature, clock and power are locked. Windows only lets LibreHardwareMonitor read them with administrator rights." />
+      </DockPanel>
+    </Border>
+
+    <ScrollViewer Grid.Row="2">
+      <StackPanel Spacing="18" Margin="0,0,0,28">
+        <Border Classes="card" Padding="8,14">
+          <StackPanel Spacing="4">
+            <StackPanel Margin="12,0,12,8" Spacing="2">
+              <TextBlock Text="Theme values" Classes="h2" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="Names that work on any PC. Panelith picks the matching sensor on this machine, shown on the right." />
+            </StackPanel>
+            <ItemsControl ItemsSource="{Binding Aliases}" ItemTemplate="{StaticResource RowTemplate}" />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card" Padding="8,14">
+          <StackPanel Spacing="4">
+            <StackPanel Margin="12,0,12,8" Spacing="2">
+              <TextBlock Text="Every sensor" Classes="h2" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="Use the bracketed id in a screen to show a sensor that has no theme value, such as a single core or a fan header." />
+            </StackPanel>
+            <ItemsControl ItemsSource="{Binding Sensors}" ItemTemplate="{StaticResource RowTemplate}" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

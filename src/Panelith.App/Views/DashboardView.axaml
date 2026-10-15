@@ -1,0 +1,134 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Panelith.App.ViewModels"
+             xmlns:c="using:Panelith.App.Controls"
+             x:Class="Panelith.App.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="28,22,28,28" Spacing="20">
+
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Classes="accent" VerticalAlignment="Center" Command="{Binding Screens.NextCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <PathIcon Data="{x:Static vm:Icons.Next}" Width="14" Height="14" />
+            <TextBlock Text="Next screen" />
+          </StackPanel>
+        </Button>
+        <Border DockPanel.Dock="Right" Classes="pill" Padding="12,7" Margin="0,0,12,0" VerticalAlignment="Center"
+                ToolTip.Tip="{Binding $parent[Window].((vm:MainViewModel)DataContext).ProfileReason, FallbackValue=''}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <PathIcon Data="{Binding $parent[Window].((vm:MainViewModel)DataContext).ProfileIcon, FallbackValue={x:Null}}" Width="14" Height="14"
+                      Foreground="{Binding $parent[Window].((vm:MainViewModel)DataContext).ProfileBrush, FallbackValue={x:Null}}" />
+            <TextBlock Text="{Binding $parent[Window].((vm:MainViewModel)DataContext).ProfileName, FallbackValue=''}" FontWeight="SemiBold" FontSize="13"
+                       Foreground="{Binding $parent[Window].((vm:MainViewModel)DataContext).ProfileBrush, FallbackValue={x:Null}}" />
+            <TextBlock Text="{Binding $parent[Window].((vm:MainViewModel)DataContext).ProfileReason, FallbackValue=''}" Classes="muted" FontSize="12" MaxWidth="220" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+        </Border>
+        <StackPanel Spacing="4">
+          <TextBlock Text="{Binding MachineName}" Classes="h1" />
+          <TextBlock Text="{Binding MachineSummary}" Classes="muted" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+      </DockPanel>
+
+      <!-- The panel, mirrored -->
+      <Border Classes="card" Padding="20">
+        <StackPanel Spacing="14">
+          <DockPanel>
+            <Border DockPanel.Dock="Right" Classes="pill" Background="{StaticResource AccentSoftBrush}" IsVisible="{Binding IsLive}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Ellipse Width="7" Height="7" Fill="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                <TextBlock Text="LIVE" FontSize="11" FontWeight="Bold" LetterSpacing="1.2" Foreground="{StaticResource AccentBrush}" />
+              </StackPanel>
+            </Border>
+            <Border DockPanel.Dock="Right" Classes="pill" IsVisible="{Binding !IsLive}">
+              <TextBlock Text="PREVIEW" FontSize="11" FontWeight="Bold" LetterSpacing="1.2" Classes="muted" />
+            </Border>
+            <StackPanel Spacing="2">
+              <TextBlock Text="{Binding Screens.Active.Name, FallbackValue=''}" Classes="h2" />
+              <TextBlock Text="{Binding MirrorCaption}" Classes="muted" FontSize="12" />
+            </StackPanel>
+          </DockPanel>
+
+          <!-- Bezel -->
+          <Border Background="#000000" CornerRadius="18" Padding="12" BorderBrush="#232c38" BorderThickness="1"
+                  BoxShadow="0 18 40 -12 #000000">
+            <c:FrameView Frame="{Binding Mirror}" Radius="8" AspectRatio="4" />
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <!-- Live stats -->
+      <ItemsControl ItemsSource="{Binding Tiles}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <UniformGrid Columns="3" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:StatTileViewModel">
+            <Border Classes="card" Margin="0,0,14,14" Padding="18,16">
+              <Grid RowDefinitions="Auto,Auto,Auto,*">
+                <TextBlock Grid.Row="0" Text="{Binding Title}" Classes="label" />
+                <TextBlock Grid.Row="1" Text="{Binding Value}" Classes="metric" Foreground="{Binding Brush}" Margin="0,6,0,0" />
+                <TextBlock Grid.Row="2" Text="{Binding Detail}" Classes="muted" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,0,0,10" />
+                <c:Sparkline Grid.Row="3" Height="46" Values="{Binding History}" Color="{Binding Color}"
+                             Minimum="{Binding Minimum}" Maximum="{Binding Maximum}" />
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <!-- Panels -->
+      <StackPanel Spacing="12">
+        <TextBlock Text="Panels" Classes="h2" />
+        <Border Classes="card" IsVisible="{Binding !HasPanels}">
+          <StackPanel Spacing="6">
+            <TextBlock Text="No panel found" FontWeight="SemiBold" />
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Plug the screen in with its USB cable and it will appear here within a few seconds. Close the vendor's own app first: only one program can drive the panel at a time." />
+          </StackPanel>
+        </Border>
+        <ItemsControl ItemsSource="{Binding Panels}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:PanelCardViewModel">
+              <Border Classes="card" Margin="0,0,0,12">
+                <StackPanel Spacing="14">
+                  <DockPanel>
+                    <Border DockPanel.Dock="Right" Classes="pill">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Ellipse Width="8" Height="8" Fill="{Binding StateBrush}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding State}" FontSize="12" FontWeight="SemiBold" />
+                      </StackPanel>
+                    </Border>
+                    <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  </DockPanel>
+                  <UniformGrid Columns="4">
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="RESOLUTION" Classes="label" />
+                      <TextBlock Text="{Binding Resolution}" />
+                    </StackPanel>
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="FRAME RATE" Classes="label" />
+                      <TextBlock Text="{Binding Rate}" />
+                    </StackPanel>
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="FRAMES SENT" Classes="label" />
+                      <TextBlock Text="{Binding Frames}" />
+                    </StackPanel>
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="COST PER FRAME" Classes="label" />
+                      <TextBlock Text="{Binding Timing}" />
+                    </StackPanel>
+                  </UniformGrid>
+                  <TextBlock Text="{Binding Problem}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"
+                             IsVisible="{Binding Problem, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

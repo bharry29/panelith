@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Panelith.Cli</RootNamespace>
+    <AssemblyName>panelith</AssemblyName>
+    <Description>Panelith command line: discover panels, preview themes, and drive a screen.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Panelith.Hosting/Panelith.Hosting.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="../../themes/**/*" CopyToOutputDirectory="PreserveNewest" LinkBase="themes" />
+  </ItemGroup>
+
+</Project>

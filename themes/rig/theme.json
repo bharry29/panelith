@@ -2,8 +2,8 @@
   "schema": 1,
   "id": "rig",
   "name": "Rig",
-  "author": "RigGlass",
-  "description": "A dark sensor dashboard authored at 1280x480. Side panels stay pinned, so the same file fills a 6.86 inch Trofeo and a 9.16 inch one.",
+  "author": "Panelith",
+  "description": "A dark sensor dashboard authored at 1280x480. The CPU graph stretches, so the same file fills a 6.86 inch Trofeo and a 9.16 inch one.",
   "canvas": { "width": 1280, "height": 480, "scaling": "none", "background": "#07090d" },
   "background": { "color": "#07090d", "gradientTo": "#10151d", "gradientAngle": 110 },
   "defaults": {
@@ -26,7 +26,7 @@
       "id": "mark",
       "x": 28, "y": 22, "width": 280, "height": 28,
       "anchor": 3,
-      "text": "RIGGLASS",
+      "text": "PANELITH",
       "fontSize": 16,
       "fontWeight": 700,
       "letterSpacing": 3,
@@ -178,7 +178,7 @@
       "type": "bar",
       "id": "mem-bar",
       "x": 28, "y": 414, "width": 762, "height": 14,
-      "anchor": 13,
+      "anchor": 9,
       "value": "@mem.load",
       "minimum": 0,
       "maximum": 100,
@@ -199,7 +199,7 @@
       "type": "shape",
       "id": "graph-plate",
       "x": 860, "y": 70, "width": 392, "height": 386,
-      "anchor": 14,
+      "anchor": 15,
       "shape": "rectangle",
       "fill": "#0d121a",
       "cornerRadius": 16
@@ -208,8 +208,8 @@
       "type": "text",
       "id": "graph-label",
       "x": 884, "y": 86, "width": 344, "height": 24,
-      "anchor": 6,
-      "text": "CPU TEMPERATURE",
+      "anchor": 7,
+      "text": "CPU LOAD  /  TEMPERATURE",
       "fontSize": 13,
       "fontWeight": 700,
       "letterSpacing": 1.5,
@@ -219,15 +219,16 @@
       "type": "graph",
       "id": "cpu-graph",
       "x": 884, "y": 122, "width": 344, "height": 310,
-      "anchor": 14,
+      "anchor": 15,
       "windowSeconds": 120,
-      "minimum": 30,
+      "minimum": 0,
       "maximum": 100,
       "gridColor": "#1c2430",
       "gridDivisions": 4,
       "backgroundColor": "#00000000",
       "series": [
-        { "value": "@cpu.temp", "color": "#3ee0c5", "thickness": 3, "fill": true, "fillOpacity": 0.18 }
+        { "value": "@cpu.load", "color": "#3ee0c5", "thickness": 3, "fill": true, "fillOpacity": 0.18 },
+        { "value": "@cpu.temp", "color": "#ffb35c", "thickness": 2.5, "fill": false }
       ]
     }
   ]

@@ -1,0 +1,57 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Panelith.App.ViewModels"
+             xmlns:views="using:Panelith.App.Views"
+             x:Class="Panelith.App.App"
+             Name="Panelith"
+             RequestedThemeVariant="Dark">
+
+  <Application.DataTemplates>
+    <DataTemplate DataType="vm:DashboardViewModel">
+      <views:DashboardView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:ScreensViewModel">
+      <views:ScreensView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:ProfilesViewModel">
+      <views:ProfilesView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:SensorsViewModel">
+      <views:SensorsView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:SettingsViewModel">
+      <views:SettingsView />
+    </DataTemplate>
+  </Application.DataTemplates>
+
+  <Application.Resources>
+    <SolidColorBrush x:Key="BgBrush" Color="#080B10" />
+    <SolidColorBrush x:Key="RailBrush" Color="#0C1016" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#10151D" />
+    <SolidColorBrush x:Key="Surface2Brush" Color="#161C26" />
+    <SolidColorBrush x:Key="StrokeBrush" Color="#1F2834" />
+    <SolidColorBrush x:Key="TextBrush" Color="#E8EEF6" />
+    <SolidColorBrush x:Key="MutedBrush" Color="#8EA0B5" />
+    <SolidColorBrush x:Key="FaintBrush" Color="#5B6B7F" />
+    <SolidColorBrush x:Key="AccentBrush" Color="#3EE0C5" />
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="#1A3EE0C5" />
+    <SolidColorBrush x:Key="WarnBrush" Color="#F0C14A" />
+    <SolidColorBrush x:Key="WarnSoftBrush" Color="#1FF0C14A" />
+    <SolidColorBrush x:Key="DangerBrush" Color="#FF5D73" />
+    <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas, monospace</FontFamily>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Dark"
+                               Accent="#3EE0C5"
+                               RegionColor="#080B10"
+                               AltHigh="#080B10"
+                               BaseHigh="#E8EEF6"
+                               ChromeMediumLow="#10151D" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="avares://Panelith/Styles/AppStyles.axaml" />
+  </Application.Styles>
+</Application>

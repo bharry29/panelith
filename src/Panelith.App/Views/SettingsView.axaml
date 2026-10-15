@@ -1,0 +1,201 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Panelith.App.ViewModels"
+             xmlns:svc="using:Panelith.App.Services"
+             x:Class="Panelith.App.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <ScrollViewer>
+    <StackPanel Margin="28,22,28,28" Spacing="18" MaxWidth="980" HorizontalAlignment="Left">
+      <TextBlock Text="Settings" Classes="h1" />
+
+      <!-- Panel output -->
+      <Border Classes="card">
+        <StackPanel Spacing="16">
+          <TextBlock Text="Panel output" Classes="h2" />
+
+          <Grid ColumnDefinitions="220,*,70">
+            <StackPanel Grid.Column="0" Spacing="2">
+              <TextBlock Text="Frame rate" FontWeight="SemiBold" />
+              <TextBlock Text="The Trofeo accepts up to 15." Classes="muted" FontSize="12" />
+            </StackPanel>
+            <Slider Grid.Column="1" Minimum="1" Maximum="15" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding FramesPerSecond}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Text="{Binding FramesPerSecond, StringFormat='{}{0} fps'}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+          </Grid>
+
+          <Grid ColumnDefinitions="220,*,70">
+            <StackPanel Grid.Column="0" Spacing="2">
+              <TextBlock Text="Image quality" FontWeight="SemiBold" />
+              <TextBlock Text="Higher is sharper but takes longer to send." Classes="muted" FontSize="12" TextWrapping="Wrap" />
+            </StackPanel>
+            <Slider Grid.Column="1" Minimum="50" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding JpegQuality}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Text="{Binding JpegQuality, StringFormat='{}{0}%'}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+          </Grid>
+
+          <Grid ColumnDefinitions="220,*">
+            <StackPanel Grid.Column="0" Spacing="2">
+              <TextBlock Text="Upside down" FontWeight="SemiBold" />
+              <TextBlock Text="For a panel mounted the other way up." Classes="muted" FontSize="12" TextWrapping="Wrap" />
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding UpsideDown}" OnContent="" OffContent="" />
+          </Grid>
+
+          <Grid ColumnDefinitions="220,*">
+            <StackPanel Grid.Column="0" Spacing="2">
+              <TextBlock Text="Smooth motion" FontWeight="SemiBold" />
+              <TextBlock Text="Values glide between readings and screens crossfade. Off sends fewer frames." Classes="muted" FontSize="12" TextWrapping="Wrap" />
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding SmoothMotion}" OnContent="" OffContent="" />
+          </Grid>
+
+          <Button Classes="accent" HorizontalAlignment="Left" Command="{Binding ApplyPanelSettingsCommand}" IsVisible="{Binding HasPendingPanelChanges}"
+                  Content="Apply (reconnects the panel)" />
+        </StackPanel>
+      </Border>
+
+      <!-- Startup -->
+      <Border Classes="card">
+        <StackPanel Spacing="14">
+          <TextBlock Text="Start-up" Classes="h2" />
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="2">
+              <TextBlock Text="Start with Windows" FontWeight="SemiBold" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="Turn this on while running as administrator to start elevated at sign-in without a prompt, so CPU sensors always work." />
+              <TextBlock Classes="faint" FontSize="12" Text="Currently set to start elevated." IsVisible="{Binding StartsElevated}" />
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding StartWithWindows}" OnContent="" OffContent="" />
+          </Grid>
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="2">
+              <TextBlock Text="Start hidden" FontWeight="SemiBold" />
+              <TextBlock Classes="muted" FontSize="12" Text="Open straight to the notification area. The panel still lights up." />
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding StartMinimized}" OnContent="" OffContent="" />
+          </Grid>
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="2">
+              <TextBlock Text="Keep running when the window is closed" FontWeight="SemiBold" />
+              <TextBlock Classes="muted" FontSize="12" Text="Quit from the notification area icon instead." />
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseToTray}" OnContent="" OffContent="" />
+          </Grid>
+          <DockPanel IsVisible="{Binding StartupMessage, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <Button DockPanel.Dock="Right" Content="Repair" Command="{Binding RepairStartupCommand}" IsVisible="{Binding CanRepairStartup}"
+                    VerticalAlignment="Center" Margin="16,0,0,0" />
+            <TextBlock Text="{Binding StartupMessage}" Foreground="{StaticResource WarnBrush}" TextWrapping="Wrap" VerticalAlignment="Center" />
+          </DockPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- Sensors -->
+      <Border Classes="card">
+        <StackPanel Spacing="14">
+          <TextBlock Text="Sensors" Classes="h2" />
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Classes="accent" Command="{Binding RestartAsAdministratorCommand}" IsVisible="{Binding CanElevate}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <PathIcon Data="{x:Static vm:Icons.Shield}" Width="14" Height="14" />
+                <TextBlock Text="Restart as administrator" />
+              </StackPanel>
+            </Button>
+            <TextBlock Text="{Binding ElevationText}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,16,0" />
+          </DockPanel>
+          <DockPanel IsVisible="{Binding ShowPawnIO}">
+            <Button DockPanel.Dock="Right" Content="Get PawnIO" Command="{Binding OpenPawnIOCommand}" IsVisible="{Binding PawnIOMissing}"
+                    VerticalAlignment="Center" Margin="16,0,0,0" />
+            <StackPanel Spacing="2">
+              <TextBlock Text="Hardware access driver" FontWeight="SemiBold" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding PawnIOText}" />
+            </StackPanel>
+          </DockPanel>
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="2">
+              <TextBlock Text="Demo sensors" FontWeight="SemiBold" />
+              <TextBlock Classes="muted" FontSize="12" Text="Animated made-up values for designing screens. Takes effect the next time Panelith starts." />
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding DemoSensors}" OnContent="" OffContent="" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- Shortcuts -->
+      <Border Classes="card">
+        <StackPanel Spacing="14">
+          <DockPanel>
+            <ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding HotkeysEnabled}" OnContent="" OffContent="" />
+            <StackPanel Spacing="2">
+              <TextBlock Text="Shortcuts" Classes="h2" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="Work anywhere in Windows, even in a game. Click a box and press the keys; Backspace clears. Each profile's own shortcut is set on the Profiles page." />
+            </StackPanel>
+          </DockPanel>
+          <Grid ColumnDefinitions="220,*" RowDefinitions="Auto,Auto" IsEnabled="{Binding HotkeysEnabled}">
+            <TextBlock Text="Next screen" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Text="{Binding NextScreenHotkey}" Width="240" HorizontalAlignment="Left" KeyDown="OnHotkeyKeyDown" Margin="0,0,0,8" />
+            <TextBlock Grid.Row="1" Text="Next profile" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding NextProfileHotkey}" Width="240" HorizontalAlignment="Left" KeyDown="OnHotkeyKeyDown" />
+          </Grid>
+          <TextBlock Text="{Binding HotkeyProblems}" Foreground="{StaticResource WarnBrush}" TextWrapping="Wrap"
+                     IsVisible="{Binding HotkeyProblems, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Game FPS -->
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Text="In-game FPS" Classes="h2" />
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Classes="ghost" Content="Get RivaTuner" Command="{Binding OpenRtssDownloadCommand}" IsVisible="{Binding RtssMissing}" />
+            <TextBlock Text="{Binding RtssStatus}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,16,0" />
+          </DockPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- Folders -->
+      <Border Classes="card">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Files" Classes="h2" />
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Classes="ghost" Content="Open" Command="{Binding OpenScreensFolderCommand}" />
+            <StackPanel Spacing="2">
+              <TextBlock Text="Your screens" FontWeight="SemiBold" />
+              <SelectableTextBlock Text="{Binding ScreensFolder}" Classes="mono faint" />
+            </StackPanel>
+          </DockPanel>
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Classes="ghost" Content="Open" Command="{Binding OpenConfigurationFolderCommand}" />
+            <StackPanel Spacing="2">
+              <TextBlock Text="Configuration and logs" FontWeight="SemiBold" />
+              <SelectableTextBlock Text="{Binding ConfigurationFolder}" Classes="mono faint" />
+            </StackPanel>
+          </DockPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- Activity -->
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Right" Text="{Binding Version, StringFormat='Panelith {0}'}" Classes="faint" FontSize="12" VerticalAlignment="Center" />
+            <TextBlock Text="Activity" Classes="h2" />
+          </DockPanel>
+          <Border Background="{StaticResource BgBrush}" CornerRadius="10" Padding="12" Height="260">
+            <ScrollViewer x:Name="LogScroll">
+              <ItemsControl ItemsSource="{Binding Log}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="svc:LogEntry">
+                    <Grid ColumnDefinitions="70,52,*" Margin="0,1">
+                      <TextBlock Grid.Column="0" Text="{Binding TimeText}" Classes="mono faint" />
+                      <TextBlock Grid.Column="1" Text="{Binding LevelText}" Classes="mono muted" />
+                      <SelectableTextBlock Grid.Column="2" Text="{Binding Message}" Classes="mono" TextWrapping="Wrap" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Border>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

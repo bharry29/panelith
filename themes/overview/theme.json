@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "id": "overview",
+  "name": "Overview",
+  "author": "Panelith",
+  "description": "Six cards side by side: CPU, GPU, memory, VRAM, network and system, each with a live graph and a bar.",
+  "canvas": { "width": 1920, "height": 480, "scaling": "fit", "background": "#090c12" },
+  "background": { "color": "#090c12" },
+  "defaults": { "fontFamily": "Inter", "color": "#e8eef6", "accentColor": "#3ee0c5", "trackColor": "#1a2230" },
+  "widgets": [
+    { "type": "group", "x": 24, "y": 24, "width": 298, "height": 432, "items": [
+      { "type": "shape", "x": 0, "y": 0, "width": 298, "height": 432, "shape": "rectangle", "fill": "#0f141c", "stroke": "#1a2230", "strokeWidth": 1.5, "cornerRadius": 18 },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 20, "width": 254, "height": 24, "text": "CPU", "fontSize": 18, "fontWeight": 700, "letterSpacing": 4, "color": "#3ee0c5" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 50, "width": 254, "height": 86, "text": "{@cpu.load:0}%", "fontSize": 76, "fontWeight": 700 },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 140, "width": 254, "height": 28, "text": "{@cpu.temp:0}\u00B0C  \u00B7  {@cpu.clock:clock}", "fontSize": 20, "color": "#8ea0b5" },
+      { "type": "graph", "x": 14, "y": 190, "width": 270, "height": 140, "windowSeconds": 90, "minimum": 0, "maximum": 100, "gridColor": "#151c27", "gridDivisions": 3, "backgroundColor": "#00000000",
+        "series": [ { "value": "@cpu.load", "color": "#3ee0c5", "thickness": 2.5, "fill": true, "fillOpacity": 0.2 } ] },
+      { "type": "bar", "x": 22, "y": 356, "width": 254, "height": 10, "value": "@cpu.load", "minimum": 0, "maximum": 100, "cornerRadius": 5, "color": "#3ee0c5" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 380, "width": 254, "height": 28, "text": "{@cpu.power:0} W", "fontSize": 20, "color": "#5b6b7f" }
+    ] },
+
+    { "type": "group", "x": 338, "y": 24, "width": 298, "height": 432, "items": [
+      { "type": "shape", "x": 0, "y": 0, "width": 298, "height": 432, "shape": "rectangle", "fill": "#0f141c", "stroke": "#1a2230", "strokeWidth": 1.5, "cornerRadius": 18 },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 20, "width": 254, "height": 24, "text": "GPU", "fontSize": 18, "fontWeight": 700, "letterSpacing": 4, "color": "#7aa2ff" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 50, "width": 254, "height": 86, "text": "{@gpu.load:0}%", "fontSize": 76, "fontWeight": 700 },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 140, "width": 254, "height": 28, "text": "{@gpu.temp:0}\u00B0C  \u00B7  {@gpu.clock:clock}", "fontSize": 20, "color": "#8ea0b5" },
+      { "type": "graph", "x": 14, "y": 190, "width": 270, "height": 140, "windowSeconds": 90, "minimum": 0, "maximum": 100, "gridColor": "#151c27", "gridDivisions": 3, "backgroundColor": "#00000000",
+        "series": [ { "value": "@gpu.load", "color": "#7aa2ff", "thickness": 2.5, "fill": true, "fillOpacity": 0.2 } ] },
+      { "type": "bar", "x": 22, "y": 356, "width": 254, "height": 10, "value": "@gpu.load", "minimum": 0, "maximum": 100, "cornerRadius": 5, "color": "#7aa2ff" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 380, "width": 254, "height": 28, "text": "{@gpu.power:0} W  \u00B7  fan {@gpu.fan:0}", "fontSize": 20, "color": "#5b6b7f" }
+    ] },
+
+    { "type": "group", "x": 652, "y": 24, "width": 298, "height": 432, "items": [
+      { "type": "shape", "x": 0, "y": 0, "width": 298, "height": 432, "shape": "rectangle", "fill": "#0f141c", "stroke": "#1a2230", "strokeWidth": 1.5, "cornerRadius": 18 },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 20, "width": 254, "height": 24, "text": "MEMORY", "fontSize": 18, "fontWeight": 700, "letterSpacing": 4, "color": "#f0c14a" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 50, "width": 254, "height": 86, "text": "{@mem.load:0}%", "fontSize": 76, "fontWeight": 700 },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 140, "width": 254, "height": 28, "text": "{@mem.used:bytes1} of {@mem.total:bytes0}", "fontSize": 20, "color": "#8ea0b5" },
+      { "type": "graph", "x": 14, "y": 190, "width": 270, "height": 140, "windowSeconds": 90, "minimum": 0, "maximum": 100, "gridColor": "#151c27", "gridDivisions": 3, "backgroundColor": "#00000000",
+        "series": [ { "value": "@mem.load", "color": "#f0c14a", "thickness": 2.5, "fill": true, "fillOpacity": 0.2 } ] },
+      { "type": "bar", "x": 22, "y": 356, "width": 254, "height": 10, "value": "@mem.load", "minimum": 0, "maximum": 100, "cornerRadius": 5, "color": "#f0c14a" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 380, "width": 254, "height": 28, "text": "system memory", "fontSize": 20, "color": "#5b6b7f" }
+    ] },
+
+    { "type": "group", "x": 966, "y": 24, "width": 298, "height": 432, "items": [
+      { "type": "shape", "x": 0, "y": 0, "width": 298, "height": 432, "shape": "rectangle", "fill": "#0f141c", "stroke": "#1a2230", "strokeWidth": 1.5, "cornerRadius": 18 },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 20, "width": 254, "height": 24, "text": "VRAM", "fontSize": 18, "fontWeight": 700, "letterSpacing": 4, "color": "#b48cff" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 50, "width": 254, "height": 86, "text": "{@gpu.vram.load:0}%", "fontSize": 76, "fontWeight": 700 },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 140, "width": 254, "height": 28, "text": "{@gpu.vram.used:bytes1} of {@gpu.vram.total:bytes0}", "fontSize": 20, "color": "#8ea0b5" },
+      { "type": "graph", "x": 14, "y": 190, "width": 270, "height": 140, "windowSeconds": 90, "minimum": 0, "maximum": 100, "gridColor": "#151c27", "gridDivisions": 3, "backgroundColor": "#00000000",
+        "series": [ { "value": "@gpu.vram.load", "color": "#b48cff", "thickness": 2.5, "fill": true, "fillOpacity": 0.2 } ] },
+      { "type": "bar", "x": 22, "y": 356, "width": 254, "height": 10, "value": "@gpu.vram.load", "minimum": 0, "maximum": 100, "cornerRadius": 5, "color": "#b48cff" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 380, "width": 254, "height": 28, "text": "graphics memory", "fontSize": 20, "color": "#5b6b7f" }
+    ] },
+
+    { "type": "group", "x": 1280, "y": 24, "width": 298, "height": 432, "items": [
+      { "type": "shape", "x": 0, "y": 0, "width": 298, "height": 432, "shape": "rectangle", "fill": "#0f141c", "stroke": "#1a2230", "strokeWidth": 1.5, "cornerRadius": 18 },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 20, "width": 254, "height": 24, "text": "NETWORK", "fontSize": 18, "fontWeight": 700, "letterSpacing": 4, "color": "#ff8a5c" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 56, "width": 254, "height": 74, "text": "{@net.down:rate}", "fontSize": 54, "fontWeight": 700, "verticalAlign": "middle" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 140, "width": 254, "height": 28, "text": "\u2191 {@net.up:rate}", "fontSize": 20, "color": "#8ea0b5" },
+      { "type": "graph", "x": 14, "y": 190, "width": 270, "height": 140, "windowSeconds": 90, "minimum": 0, "gridColor": "#151c27", "gridDivisions": 3, "backgroundColor": "#00000000",
+        "series": [
+          { "value": "@net.down", "color": "#ff8a5c", "thickness": 2.5, "fill": true, "fillOpacity": 0.2 },
+          { "value": "@net.up", "color": "#ffd1a8", "thickness": 1.5 }
+        ] },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 380, "width": 100, "height": 28, "text": "\u25A0 down", "fontSize": 20, "color": "#ff8a5c" },
+      { "type": "text", "stabilizeWidth": false, "x": 122, "y": 380, "width": 100, "height": 28, "text": "\u25A0 up", "fontSize": 20, "color": "#ffd1a8" }
+    ] },
+
+    { "type": "group", "x": 1594, "y": 24, "width": 302, "height": 432, "items": [
+      { "type": "shape", "x": 0, "y": 0, "width": 302, "height": 432, "shape": "rectangle", "fill": "#0f141c", "stroke": "#1a2230", "strokeWidth": 1.5, "cornerRadius": 18 },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 20, "width": 258, "height": 24, "text": "SYSTEM", "fontSize": 18, "fontWeight": 700, "letterSpacing": 4, "color": "#2fd3ff" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 50, "width": 258, "height": 86, "text": "{@sys.time}", "fontSize": 76, "fontWeight": 700 },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 140, "width": 258, "height": 28, "text": "{@sys.date}", "fontSize": 20, "color": "#8ea0b5" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 204, "width": 258, "height": 26, "text": "DRIVE C:", "fontSize": 16, "fontWeight": 700, "letterSpacing": 3, "color": "#5b6b7f" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 232, "width": 258, "height": 40, "text": "{@disk.used:0}% used", "fontSize": 30, "fontWeight": 700 },
+      { "type": "bar", "x": 22, "y": 284, "width": 258, "height": 10, "value": "@disk.used", "minimum": 0, "maximum": 100, "cornerRadius": 5, "color": "#2fd3ff",
+        "colorStops": [ { "at": 0, "color": "#2fd3ff" }, { "at": 90, "color": "#ff5d73" } ] },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 302, "width": 258, "height": 26, "text": "{@disk.free:bytes0} free", "fontSize": 18, "color": "#8ea0b5" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 356, "width": 258, "height": 22, "text": "{@sys.host}", "fontSize": 17, "color": "#8ea0b5" },
+      { "type": "text", "stabilizeWidth": false, "x": 22, "y": 382, "width": 258, "height": 26, "text": "up {@sys.uptime:duration}", "fontSize": 20, "color": "#5b6b7f" }
+    ] }
+  ]
+}
