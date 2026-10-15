@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>OmniPanel.Devices</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/OmniPanel.Devices/OmniPanel.Devices.csproj" />
+  </ItemGroup>
+
+</Project>

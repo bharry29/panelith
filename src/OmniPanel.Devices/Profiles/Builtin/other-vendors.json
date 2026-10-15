@@ -1,0 +1,37 @@
+[
+  {
+    "id": "weact.display-fs-3.5",
+    "vendor": "WeAct Studio",
+    "model": "Display FS V1 3.5\"",
+    "driver": "recognized-only",
+    "usb": [{ "vendor": "0x1A86", "product": "0xFE0C" }],
+    "width": 320,
+    "height": 480,
+    "pixelFormat": "rgb565LittleEndian",
+    "transport": "serial",
+    "probe": "none",
+    "baudRate": 115200,
+    "capabilities": { "supportsBrightness": true, "maxFramesPerSecond": 5 },
+    "support": "partial",
+    "notes": "Recognised but not yet drivable. Uses its own command set with optional FastLZ compression and an on-board temperature and humidity sensor. Contributions welcome; see docs/contributing.md."
+  },
+  {
+    "id": "beadapanel.generic",
+    "vendor": "BeadaPanel",
+    "model": "BeadaPanel 2 / 3 / 4 / 5 / 6 / 7",
+    "driver": "recognized-only",
+    "usb": [{ "vendor": "0x4E58", "product": "0x1001" }],
+    "width": 480,
+    "height": 480,
+    "pixelFormat": "rgb565BigEndian",
+    "transport": "usbBulk",
+    "probe": "none",
+    "capabilities": {
+      "supportsBrightness": true,
+      "supportsPartialUpdate": true,
+      "maxFramesPerSecond": 20
+    },
+    "support": "partial",
+    "notes": "Recognised but not yet drivable. BeadaPanel publishes an SDK and uses two separate USB channels for management and pixels, which is why it handles sleep and resume better than most panels in this class. A first-class driver is the highest-priority addition; see docs/roadmap.md."
+  }
+]

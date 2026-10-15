@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/OmniPanel.Core/OmniPanel.Core.csproj" />
+    <Project Path="src/OmniPanel.Devices/OmniPanel.Devices.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/OmniPanel.Core.Tests/OmniPanel.Core.Tests.csproj" />
+    <Project Path="tests/OmniPanel.Devices.Tests/OmniPanel.Devices.Tests.csproj" />
   </Folder>
 </Solution>
