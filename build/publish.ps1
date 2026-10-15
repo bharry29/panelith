@@ -40,6 +40,32 @@ if (-not $Version) {
     $Version = $props.SelectSingleNode('//VersionPrefix').InnerText
 }
 
+# The release is built locally rather than in CI. Keep the dependency gate
+# here so an installer cannot be produced from packages NuGet knows are
+# vulnerable, including vulnerabilities in transitive dependencies.
+Write-Host 'Checking NuGet packages for known vulnerabilities'
+$audit = & dotnet list (Join-Path $root 'Panelith.slnx') package --vulnerable --include-transitive --format json --output-version 1 2>&1
+$auditText = $audit -join [Environment]::NewLine
+if ($LASTEXITCODE -ne 0) {
+    Write-Host $auditText
+    throw "The dependency vulnerability check failed with exit code $LASTEXITCODE. No installer was built."
+}
+
+try {
+    $null = $auditText | ConvertFrom-Json
+}
+catch {
+    Write-Host $auditText
+    throw 'The dependency vulnerability check returned unreadable results. No installer was built.'
+}
+
+# In the JSON format, this property only appears on an affected package.
+if ($auditText -match '"vulnerabilities"\s*:') {
+    Write-Host $auditText
+    throw 'A direct or transitive NuGet package has a known vulnerability. Update it before building an installer.'
+}
+Write-Host 'No known vulnerable NuGet packages were found.'
+
 & (Join-Path $PSScriptRoot 'fetch-tools.ps1')
 
 Write-Host "Publishing Panelith $Version ($Configuration, $Runtime)"
