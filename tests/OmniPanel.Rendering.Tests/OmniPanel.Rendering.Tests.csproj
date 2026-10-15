@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>OmniPanel.Rendering</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/OmniPanel.Rendering/OmniPanel.Rendering.csproj" />
+  </ItemGroup>
+
+</Project>

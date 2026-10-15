@@ -2,9 +2,13 @@
   <Folder Name="/src/">
     <Project Path="src/OmniPanel.Core/OmniPanel.Core.csproj" />
     <Project Path="src/OmniPanel.Devices/OmniPanel.Devices.csproj" />
+    <Project Path="src/OmniPanel.Rendering/OmniPanel.Rendering.csproj" />
+    <Project Path="src/OmniPanel.Monitoring/OmniPanel.Monitoring.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/OmniPanel.Core.Tests/OmniPanel.Core.Tests.csproj" />
     <Project Path="tests/OmniPanel.Devices.Tests/OmniPanel.Devices.Tests.csproj" />
+    <Project Path="tests/OmniPanel.Rendering.Tests/OmniPanel.Rendering.Tests.csproj" />
+    <Project Path="tests/OmniPanel.Monitoring.Tests/OmniPanel.Monitoring.Tests.csproj" />
   </Folder>
 </Solution>

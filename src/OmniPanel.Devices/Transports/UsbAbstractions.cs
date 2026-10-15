@@ -31,11 +31,17 @@ public sealed record UsbDeviceInfo(
 /// <param name="EndpointOut">Address of the bulk OUT endpoint.</param>
 /// <param name="EndpointIn">Address of the bulk IN endpoint, when the interface has one.</param>
 /// <param name="MaxPacketSize">The OUT endpoint's maximum packet size.</param>
+/// <param name="InterfaceClass">
+/// The claimed interface's USB class code. Drivers check this to tell a
+/// vendor-specific bulk panel from one that speaks the mass-storage transport,
+/// because several Thermalright models ship both behind one product id.
+/// </param>
 public readonly record struct UsbBulkEndpoints(
     byte InterfaceNumber,
     byte EndpointOut,
     byte? EndpointIn,
-    int MaxPacketSize);
+    int MaxPacketSize,
+    byte InterfaceClass = 0);
 
 /// <summary>
 /// An open USB device with claimed bulk endpoints.

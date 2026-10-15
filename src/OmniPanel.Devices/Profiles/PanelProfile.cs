@@ -74,6 +74,9 @@ public enum PanelProbeFamily
 
     /// <summary>Turing revision C hello.</summary>
     TuringRevisionC,
+
+    /// <summary>Kipye Qiye "revision D" info request.</summary>
+    TuringRevisionD,
 }
 
 /// <summary>
