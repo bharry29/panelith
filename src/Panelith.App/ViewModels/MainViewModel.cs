@@ -30,7 +30,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private readonly DispatcherTimer _fast;
     private readonly DispatcherTimer _slow;
 
-    public MainViewModel(PanelithService service, AppSettingsStore store, AppSettings settings)
+    public MainViewModel(PanelithService service, AppSettingsStore store, AppSettings settings, AppSession session)
     {
         _service = service;
         var profileStore = new ProfileStore(service.Runtime.Paths);
@@ -75,7 +75,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             new("Sensors", Icons.Sensors, Sensors),
             new("Settings", Icons.Settings, Settings),
         ];
-        SelectedNav = NavItems[0];
+        SelectedNav = RestoreSession(session);
 
         service.Log.EntryAdded += entry => Dispatcher.UIThread.Post(() => Settings.Append(entry));
         service.Renderers.ThemeFailed += (_, e) => Dispatcher.UIThread.Post(() =>
@@ -206,6 +206,32 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     private void DismissToast() => Toast = null;
+
+    /// <summary>The page and the choices made on each page, for the next launch.</summary>
+    public AppSession CaptureSession(AppSession previous) => previous with
+    {
+        Page = SelectedNav.Title,
+        SensorFilter = Sensors.Filter,
+        DesignerScreen = Designer.SavedId ?? Designer.OpenScreen?.Id,
+        SelectedProfile = Profiles.Selected?.Id,
+    };
+
+    /// <summary>Puts each page back as it was left and returns the page to open on.</summary>
+    private NavItem RestoreSession(AppSession session)
+    {
+        Sensors.Filter = session.SensorFilter ?? string.Empty;
+        if (session.DesignerScreen is { } screen && Designer.ScreenChoices.FirstOrDefault(c => c.Id == screen) is { } choice)
+        {
+            Designer.OpenScreen = choice;
+        }
+
+        if (session.SelectedProfile is { } profile && Profiles.Items.FirstOrDefault(i => i.Id == profile) is { } item)
+        {
+            Profiles.Selected = item;
+        }
+
+        return NavItems.FirstOrDefault(n => n.Title == session.Page) ?? NavItems[0];
+    }
 
     [RelayCommand]
     private void Navigate(string title) =>

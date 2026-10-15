@@ -20,6 +20,8 @@ public sealed partial class App : Application
     private PanelithService? _service;
     private AppLog? _log;
     private AppSettingsStore? _store;
+    private AppSessionStore? _sessionStore;
+    private AppSession _session = new();
     private TrayIcon? _tray;
     private bool _quitting;
     private readonly ErrorBurst _errors = new(count: 3, window: TimeSpan.FromSeconds(60));
@@ -43,6 +45,8 @@ public sealed partial class App : Application
         var migratedFrom = AppPaths.MigrateLegacy(paths.Root);
         _store = new AppSettingsStore(paths);
         var settings = _store.Load();
+        _sessionStore = new AppSessionStore(paths);
+        _session = _sessionStore.Load();
         _log = new AppLog(paths.LogsDirectory);
         var crashLog = _log.CreateLogger("Panelith.App");
         if (migratedFrom is not null)
@@ -56,6 +60,10 @@ public sealed partial class App : Application
         if (_store.LastQuarantined is { } badSettings)
         {
             crashLog.LogWarning("app.json was damaged and was moved to {Path}; default settings are in use.", badSettings);
+        }
+        if (_sessionStore.LastQuarantined is { } badSession)
+        {
+            crashLog.LogWarning("session.json was damaged and was moved to {Path}; the window opens as new.", badSession);
         }
 
         Dispatcher.UIThread.UnhandledException += (_, e) =>
@@ -80,7 +88,9 @@ public sealed partial class App : Application
         };
 
         _window = new MainWindow();
+        _window.RestorePlacement(_session.Window);
         _window.Closing += OnWindowClosing;
+        desktop.ShutdownRequested += (_, _) => SaveSession();
         var minimized = Program.Arguments.Contains(WindowsIntegration.MinimizedArgument) || settings.StartMinimized;
         if (!minimized)
         {
@@ -106,7 +116,7 @@ public sealed partial class App : Application
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 _service = service;
-                _viewModel = new MainViewModel(service, _store!, settings) { IsWindowVisible = _window!.IsVisible };
+                _viewModel = new MainViewModel(service, _store!, settings, _session) { IsWindowVisible = _window!.IsVisible };
                 _viewModel.ElevationRequested += (_, _) => RestartElevated();
                 _viewModel.ProfilesChanged += (_, _) => RebuildTrayMenu();
                 _viewModel.ProfileController.PropertyChanged += (_, e) =>
@@ -254,6 +264,7 @@ public sealed partial class App : Application
             return;
         }
 
+        SaveSession();
         var closeToTray = _viewModel?.Settings.CloseToTray ?? true;
         if (closeToTray && _service is not null)
         {
@@ -297,6 +308,28 @@ public sealed partial class App : Application
         }
     }
 
+    /// <summary>Writes how the window and its pages were left, for the next launch.</summary>
+    private void SaveSession()
+    {
+        if (_sessionStore is null || _quitting)
+        {
+            return;
+        }
+
+        try
+        {
+            _session = (_viewModel?.CaptureSession(_session) ?? _session) with
+            {
+                Window = _window?.CapturePlacement() ?? _session.Window,
+            };
+            _sessionStore.Save(_session);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _log?.CreateLogger("Panelith.App").LogWarning("The window layout could not be saved: {Message}", ex.Message);
+        }
+    }
+
     private void RestartElevated()
     {
         if (WindowsIntegration.RelaunchElevated())
@@ -312,6 +345,7 @@ public sealed partial class App : Application
             return;
         }
 
+        SaveSession();
         _quitting = true;
         _viewModel?.Dispose();
         if (_service is not null)
