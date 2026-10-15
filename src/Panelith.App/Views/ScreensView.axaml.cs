@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Panelith.App.Services;
 using Panelith.App.ViewModels;
 
 namespace Panelith.App.Views;
@@ -14,6 +15,20 @@ public sealed partial class ScreensView : UserControl
         if (DataContext is ScreensViewModel screens)
         {
             SettingsViewModel.OpenFolder(screens.UserScreensFolder);
+        }
+    }
+
+    private void OpenVideosFolder(object? sender, RoutedEventArgs e)
+    {
+        Directory.CreateDirectory(MediaFolders.Root);
+        SettingsViewModel.OpenFolder(MediaFolders.Root);
+    }
+
+    private void RemoveWallpaper(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is ScreensViewModel screens && (sender as Control)?.Tag is ScreenCardViewModel card)
+        {
+            screens.RemoveWallpaperCommand.Execute(card);
         }
     }
 
@@ -88,9 +103,10 @@ public sealed partial class ScreensView : UserControl
     private async void DeleteScreen(object? sender, RoutedEventArgs e)
     {
         if (DataContext is ScreensViewModel screens && (sender as Control)?.Tag is ScreenCardViewModel card
-            && await ConfirmPrompt.AskAsync(TopLevel.GetTopLevel(this) as Window, $"Delete {card.Name}?", "The screen and its pictures and videos are removed from your screens folder. This cannot be undone.", "Delete"))
+            && await ConfirmPrompt.AskAsync(TopLevel.GetTopLevel(this) as Window, $"Delete {card.Name}?", "The screen and its pictures and videos are removed from your screens folder. This cannot be undone.", "Delete")
+            && !await screens.DeleteAsync(card))
         {
-            screens.Delete(card);
+            await ConfirmPrompt.AskAsync(TopLevel.GetTopLevel(this) as Window, $"{card.Name} could not be deleted", "One of its files is still in use. Try again in a moment.", "OK");
         }
     }
 

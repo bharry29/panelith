@@ -239,6 +239,67 @@ public sealed class VideoBakerTests : IDisposable
     }
 
     [Fact]
+    public void AFilmstripSpreadsPicturesOverTheWholeVideo()
+    {
+        Assert.SkipUnless(File.Exists(_video), "Media Foundation is not available.");
+        var folder = Path.Combine(_folder, "strip");
+        var frames = new List<ExtractedFrame>();
+
+        var written = VideoFrames.Filmstrip(_video, 3, folder, frames.Add, TestContext.Current.CancellationToken);
+
+        Assert.Equal(3, written);
+        Assert.Equal([0, 1, 2], frames.Select(f => f.Index));
+        for (var i = 0; i < 3; i++)
+        {
+            using var bitmap = SKBitmap.Decode(frames[i].Path);
+            Assert.Equal(VideoFrames.ThumbnailHeight, bitmap.Height);
+            Assert.Equal(150, bitmap.Width);
+            AssertMostly(Colours[i], bitmap.GetPixel(bitmap.Width / 2, bitmap.Height / 2));
+        }
+    }
+
+    [Fact]
+    public void ThePreviewOfAPartHasOneFramePerStep()
+    {
+        Assert.SkipUnless(File.Exists(_video), "Media Foundation is not available.");
+        var folder = Path.Combine(_folder, "range");
+        var frames = new List<ExtractedFrame>();
+
+        var written = VideoFrames.Range(_video, folder, TimeSpan.FromSeconds(1.1), TimeSpan.FromSeconds(1.9), 15, frames.Add, TestContext.Current.CancellationToken);
+
+        Assert.InRange(written, 11, 13);
+        Assert.Equal(Enumerable.Range(0, written), frames.Select(f => f.Index));
+        Assert.Equal(TimeSpan.FromSeconds(1.1), frames[0].Time);
+        foreach (var frame in frames)
+        {
+            using var bitmap = SKBitmap.Decode(frame.Path);
+            Assert.Equal(320, bitmap.Width);
+            AssertMostly(SKColors.Lime, bitmap.GetPixel(160, bitmap.Height / 2));
+        }
+
+        Assert.Empty(Directory.GetFiles(folder, "*.partial"));
+    }
+
+    [Fact]
+    public void ACancelledPreviewStops()
+    {
+        Assert.SkipUnless(File.Exists(_video), "Media Foundation is not available.");
+        var folder = Path.Combine(_folder, "cancelled-range");
+        using var cancel = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        var seen = 0;
+
+        Assert.Throws<OperationCanceledException>(() => VideoFrames.Range(_video, folder, TimeSpan.Zero, TimeSpan.FromSeconds(3), 15, _ =>
+        {
+            if (++seen == 4)
+            {
+                cancel.Cancel();
+            }
+        }, cancel.Token));
+        Assert.Equal(4, Directory.GetFiles(folder, "f*.jpg").Length);
+        Assert.Empty(Directory.GetFiles(folder, "*.partial"));
+    }
+
+    [Fact]
     public void AFileThatIsNotAVideoIsReportedClearly()
     {
         Assert.SkipUnless(File.Exists(_video), "Media Foundation is not available.");

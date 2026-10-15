@@ -47,6 +47,14 @@ public sealed partial class ScreenCardViewModel : ObservableObject, IDisposable
 
     public bool HasProblem { get; }
 
+    public bool CanSetWallpaper => !HasProblem;
+
+    /// <summary>Whether the card's menu has anything in it.</summary>
+    public bool HasActions => CanSetWallpaper || IsUserTheme;
+
+    /// <summary>When the screen's file last changed, to list the user's newest screens first.</summary>
+    internal DateTime Modified { get; init; }
+
     public double AspectRatio { get; }
 
     /// <summary>The live thumbnail.</summary>

@@ -5,15 +5,15 @@
         x:Class="Panelith.App.Views.MediaImportWindow"
         x:DataType="vm:MediaImportViewModel"
         Title="{Binding Title}"
-        Width="980" Height="820" MinWidth="720" MinHeight="600"
+        Width="1100" Height="880" MinWidth="760" MinHeight="620"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
   <DockPanel Margin="24">
 
     <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,16">
       <TextBlock Text="{Binding Title}" Classes="h1" />
-      <TextBlock Classes="muted" TextWrapping="Wrap">
-        <Run Text="{Binding SourceName}" FontWeight="SemiBold" /><Run Text="  ·  for a " /><Run Text="{Binding PanelText}" /><Run Text=" panel" />
+      <TextBlock Classes="muted" FontSize="12" TextTrimming="CharacterEllipsis">
+        <Run Text="{Binding SourceName}" /><Run Text="  ·  " /><Run Text="{Binding SourceSizeText}" /><Run Text="  ·  for a " /><Run Text="{Binding PanelText}" /><Run Text=" panel" />
       </TextBlock>
     </StackPanel>
 
@@ -59,58 +59,78 @@
     </ScrollViewer>
 
     <ScrollViewer IsVisible="{Binding IsEditing}">
-      <StackPanel Spacing="16" IsEnabled="{Binding IsIdle}">
-        <Border Background="#000000" CornerRadius="10" Padding="6">
-          <c:CropBox Source="{Binding Preview}" Crop="{Binding Crop}" TargetAspect="{Binding PanelAspect}" MaxHeight="420" />
-        </Border>
-        <DockPanel>
-          <Button DockPanel.Dock="Right" Classes="ghost" Content="Fit to the whole picture" Command="{Binding ResetCropCommand}" />
-          <TextBlock Text="{Binding SoftWarning}" Foreground="{StaticResource WarnBrush}" TextWrapping="Wrap" FontSize="12" VerticalAlignment="Center"
-                     IsVisible="{Binding SoftWarning, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        </DockPanel>
+      <StackPanel Spacing="14" IsEnabled="{Binding IsIdle}">
 
-        <!-- Trim -->
-        <Border Classes="card" IsVisible="{Binding IsVideo}">
+        <!-- Player: the whole picture with the crop, and what the panel will show -->
+        <Border Classes="card" Padding="12">
           <StackPanel Spacing="10">
+            <Border Background="#000000" CornerRadius="10" Padding="4">
+              <c:CropBox Source="{Binding Preview}" Crop="{Binding Crop}" TargetAspect="{Binding PanelAspect}" MaxHeight="400" />
+            </Border>
+            <StackPanel Spacing="4">
+              <TextBlock Text="ON THE PANEL" Classes="label" />
+              <c:CroppedImage Source="{Binding Preview}" Crop="{Binding Crop}" AspectRatio="{Binding PanelAspect}" MaxHeight="120" HorizontalAlignment="Left" />
+            </StackPanel>
+            <DockPanel>
+              <Button DockPanel.Dock="Right" Classes="ghost small" Content="Fit to the whole picture" Command="{Binding ResetCropCommand}" />
+              <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" IsVisible="{Binding IsVideo}">
+                <Button Classes="ghost icon" Command="{Binding TogglePlayCommand}" ToolTip.Tip="{Binding PlayTip}" Width="34" Height="34">
+                  <PathIcon Data="{Binding PlayIcon}" Width="14" Height="14" />
+                </Button>
+                <TextBlock Text="{Binding PlayheadText}" Classes="mono" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding PreviewProgressText}" Classes="muted" FontSize="12" VerticalAlignment="Center"
+                           IsVisible="{Binding PreviewProgressText, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              </StackPanel>
+            </DockPanel>
+            <TextBlock Text="{Binding SoftWarning}" Foreground="{StaticResource WarnBrush}" TextWrapping="Wrap" FontSize="12"
+                       IsVisible="{Binding SoftWarning, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </StackPanel>
+        </Border>
+
+        <!-- Filmstrip: the part to loop -->
+        <Border Classes="card" IsVisible="{Binding IsVideo}">
+          <StackPanel Spacing="12">
             <DockPanel>
               <TextBlock DockPanel.Dock="Right" Text="{Binding LengthText}" Classes="muted" FontSize="12" VerticalAlignment="Center" />
-              <TextBlock Text="Part of the video to loop" FontWeight="SemiBold" />
+              <TextBlock Text="Part to loop" FontWeight="SemiBold" VerticalAlignment="Center" />
             </DockPanel>
-            <Grid ColumnDefinitions="60,*" RowDefinitions="Auto,Auto" RowSpacing="4">
-              <TextBlock Text="Start" Classes="muted" VerticalAlignment="Center" />
-              <Slider Grid.Column="1" Minimum="0" Maximum="{Binding DurationSeconds}" Value="{Binding StartSeconds}" SmallChange="0.1" LargeChange="1" />
-              <TextBlock Grid.Row="1" Text="End" Classes="muted" VerticalAlignment="Center" />
-              <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="{Binding DurationSeconds}" Value="{Binding EndSeconds}" SmallChange="0.1" LargeChange="1" />
-            </Grid>
-            <Grid ColumnDefinitions="60,*,Auto">
+            <c:Filmstrip Thumbnails="{Binding Thumbnails}" Duration="{Binding DurationSeconds}"
+                         Start="{Binding StartSeconds}" End="{Binding EndSeconds}"
+                         Playhead="{Binding PlayheadSeconds}" MaxLength="{Binding MaxLengthSeconds}"
+                         Cursor="Hand" ToolTip.Tip="Drag the handles to choose where the loop starts and ends, or drag the middle to move it. Arrow keys nudge the last handle." />
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12">
               <TextBlock Text="Speed" Classes="muted" VerticalAlignment="Center" />
-              <Slider Grid.Column="1" Minimum="0.25" Maximum="2" Value="{Binding Speed}" SmallChange="0.05" LargeChange="0.25" TickFrequency="0.25" IsSnapToTickEnabled="True" />
-              <TextBlock Grid.Column="2" Text="{Binding SpeedText}" Width="48" TextAlignment="Right" VerticalAlignment="Center" />
+              <Slider Grid.Column="1" Minimum="0.25" Maximum="2" Value="{Binding Speed}" SmallChange="0.05" LargeChange="0.25" TickFrequency="0.25" IsSnapToTickEnabled="True" MaxWidth="320" HorizontalAlignment="Stretch" />
+              <TextBlock Grid.Column="2" Text="{Binding SpeedText}" Width="40" VerticalAlignment="Center" />
+              <CheckBox Grid.Column="3" IsChecked="{Binding SmoothLoop}" Content="Smooth loop" ToolTip.Tip="Blends the last half second into the start, so the loop has no jump" />
             </Grid>
-            <CheckBox IsChecked="{Binding SmoothLoop}" Content="Blend the end into the start so the loop has no jump" />
           </StackPanel>
         </Border>
 
         <!-- New screen -->
         <Border Classes="card" IsVisible="{Binding IsNewScreen}">
-          <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto" RowSpacing="12">
-            <TextBlock Text="Screen name" VerticalAlignment="Center" />
-            <TextBox Grid.Column="1" Text="{Binding Name}" MaxLength="60" />
-            <TextBlock Grid.Row="1" Text="On top of the video" VerticalAlignment="Center" />
-            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding OverlayChoices}" SelectedIndex="{Binding Overlay}" MinWidth="260" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+            <StackPanel Spacing="6">
+              <TextBlock Text="Screen name" Classes="muted" FontSize="12" />
+              <TextBox Text="{Binding Name}" MaxLength="60" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="6">
+              <TextBlock Text="On top of the video" Classes="muted" FontSize="12" />
+              <ComboBox ItemsSource="{Binding OverlayChoices}" SelectedIndex="{Binding Overlay}" MinWidth="260" />
+            </StackPanel>
           </Grid>
         </Border>
 
         <!-- Wallpaper -->
         <Border Classes="card" IsVisible="{Binding IsWallpaper}">
           <StackPanel Spacing="8">
-            <Grid ColumnDefinitions="140,*,Auto">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
               <TextBlock Text="Darken" VerticalAlignment="Center" />
               <Slider Grid.Column="1" Minimum="0" Maximum="80" Value="{Binding ScrimPercent}" TickFrequency="5" IsSnapToTickEnabled="True" />
-              <TextBlock Grid.Column="2" Text="{Binding ScrimPercent, StringFormat={}{0:0}%}" Width="48" TextAlignment="Right" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2" Text="{Binding ScrimPercent, StringFormat={}{0:0}%}" Width="40" VerticalAlignment="Center" />
             </Grid>
             <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
-                       Text="A darker wallpaper keeps the screen's readings easy to see. Screens that come with Panelith are copied first, as &quot;(custom)&quot;, so the original stays as it was." />
+                       Text="Darker keeps the readings easy to see. Screens that come with Panelith are copied first, so the original stays as it was." />
           </StackPanel>
         </Border>
       </StackPanel>

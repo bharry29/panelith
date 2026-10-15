@@ -79,6 +79,24 @@ public sealed class ScreenWorkshopTests : IDisposable
     }
 
     [Fact]
+    public void AScreenWithAFileInUseStaysWholeWhenDeleted()
+    {
+        Assert.SkipUnless(OperatingSystem.IsWindows(), "Only Windows refuses to delete open files.");
+        var (id, folder, theme) = _workshop.Editable("clock");
+        var clip = Path.Combine(folder, "clip.ptclip");
+        File.WriteAllText(clip, "x");
+
+        using (new FileStream(clip, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Assert.ThrowsAny<IOException>(() => _workshop.Delete(id));
+            Assert.True(File.Exists(Path.Combine(folder, "theme.json")));
+        }
+
+        _workshop.Delete(id);
+        Assert.False(Directory.Exists(folder));
+    }
+
+    [Fact]
     public void AWallpaperReplacesTheOtherKindAndOldFilesAreRemoved()
     {
         var (_, folder, theme) = _workshop.Editable("clock");

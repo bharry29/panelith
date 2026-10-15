@@ -38,6 +38,17 @@ public sealed partial class ScreensViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<ScreenCardViewModel> Cards { get; } = [];
 
+    /// <summary>The user's own screens, newest first.</summary>
+    public ObservableCollection<ScreenCardViewModel> UserCards { get; } = [];
+
+    /// <summary>The screens that come with Panelith.</summary>
+    public ObservableCollection<ScreenCardViewModel> IncludedCards { get; } = [];
+
+    public bool HasUserCards => UserCards.Count > 0;
+
+    /// <summary>The panel's shape, which every thumbnail box takes so the cards line up.</summary>
+    public double ThumbnailAspect => _service.PanelSize is var (width, height) && height > 0 ? width / (double)height : 4d;
+
     [ObservableProperty]
     public partial ScreenCardViewModel? Active { get; set; }
 
@@ -93,13 +104,17 @@ public sealed partial class ScreensViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Deletes one of the user's own screens.</summary>
-    public void Delete(ScreenCardViewModel card)
+    /// <summary>
+    /// Deletes one of the user's own screens. The panel lets go of a screen's
+    /// clips a moment after switching away, so a locked file is retried for a
+    /// few seconds. Returns false when the screen could not be deleted.
+    /// </summary>
+    public async Task<bool> DeleteAsync(ScreenCardViewModel card)
     {
         ArgumentNullException.ThrowIfNull(card);
         if (!card.IsUserTheme)
         {
-            return;
+            return false;
         }
 
         if (card.IsActive && Cards.FirstOrDefault(c => c != card && !c.HasProblem) is { } next)
@@ -107,17 +122,35 @@ public sealed partial class ScreensViewModel : ObservableObject, IDisposable
             Show(next);
         }
 
-        card.Dispose();
-        try
+        Cards.Remove(card);
+        UserCards.Remove(card);
+        OnPropertyChanged(nameof(HasUserCards));
+        _retired.Add(card);
+        DisposeRetiredCards();
+        _service.Renderers.Reload();
+        var workshop = new ScreenWorkshop(_service.Library, _service.Runtime.Paths);
+        var deleted = false;
+        for (var attempt = 0; !deleted; attempt++)
         {
-            new ScreenWorkshop(_service.Library, _service.Runtime.Paths).Delete(card.Id);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            _logger.LogWarning("Could not delete {Screen}: {Error}", card.Id, ex.Message);
+            try
+            {
+                workshop.Delete(card.Id);
+                deleted = true;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                if (attempt >= 20)
+                {
+                    _logger.LogWarning("Could not delete {Screen}: {Error}", card.Id, ex.Message);
+                    break;
+                }
+
+                await Task.Delay(250);
+            }
         }
 
         Reload();
+        return deleted;
     }
 
     partial void OnRotateScreensChanged(bool value)
@@ -197,9 +230,23 @@ public sealed partial class ScreensViewModel : ObservableObject, IDisposable
             Cards.Add(new ScreenCardViewModel(this, entry.Id, theme, problem, entry.IsUserTheme)
             {
                 InRotation = rotation.Contains(entry.Id),
+                Modified = LastWrite(entry.File),
             });
         }
 
+        UserCards.Clear();
+        IncludedCards.Clear();
+        foreach (var card in Cards.Where(c => c.IsUserTheme).OrderByDescending(c => c.Modified))
+        {
+            UserCards.Add(card);
+        }
+
+        foreach (var card in Cards.Where(c => !c.IsUserTheme))
+        {
+            IncludedCards.Add(card);
+        }
+
+        OnPropertyChanged(nameof(HasUserCards));
         _loading = false;
         _service.Renderers.Reload();
         MarkActive();
@@ -339,6 +386,18 @@ public sealed partial class ScreensViewModel : ObservableObject, IDisposable
         var order = _profiles.Active?.Screens ?? [];
         var ticked = Cards.Where(c => c.InRotation && !c.HasProblem).ToList();
         return [.. ticked.OrderBy(c => IndexOrEnd(order, c.Id))];
+    }
+
+    private static DateTime LastWrite(string file)
+    {
+        try
+        {
+            return File.GetLastWriteTimeUtc(file);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            return DateTime.MinValue;
+        }
     }
 
     private static int IndexOrEnd(IReadOnlyList<string> order, string id)

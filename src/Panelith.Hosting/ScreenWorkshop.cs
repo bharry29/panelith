@@ -275,6 +275,31 @@ public sealed class ScreenWorkshop
             throw new UnauthorizedAccessException("Screens that ship with Panelith cannot be deleted.");
         }
 
+        DeleteFolder(folder);
+    }
+
+    /// <summary>
+    /// Deletes a screen folder with its <c>theme.json</c> last, so a picture or
+    /// clip that is still open stops the delete with the screen still whole,
+    /// instead of leaving files behind that no screen lists.
+    /// </summary>
+    public static void DeleteFolder(string folder)
+    {
+        if (!Directory.Exists(folder))
+        {
+            return;
+        }
+
+        var theme = Path.Combine(folder, ThemeSchema.FileName);
+        foreach (var path in Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories))
+        {
+            if (!string.Equals(path, theme, StringComparison.OrdinalIgnoreCase))
+            {
+                File.Delete(path);
+            }
+        }
+
+        File.Delete(theme);
         Directory.Delete(folder, recursive: true);
     }
 

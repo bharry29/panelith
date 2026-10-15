@@ -1,5 +1,7 @@
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Runtime.Versioning;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -31,6 +33,8 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
     private static readonly TimeSpan DefaultLength = TimeSpan.FromSeconds(30);
 
     private static readonly TimeSpan ReviewFrameTime = TimeSpan.FromSeconds(1d / 15d);
+    private static readonly TimeSpan RangeDelay = TimeSpan.FromMilliseconds(400);
+    private const int FilmstripCount = 24;
 
     private readonly PanelithService _service;
     private readonly ScreenWorkshop _workshop;
@@ -44,6 +48,15 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
     private ThemeRenderer? _renderer;
     private DispatcherTimer? _reviewTimer;
     private bool _rendering;
+    private readonly string _session;
+    private readonly List<ExtractedFrame> _frames = [];
+    private readonly DispatcherTimer _playTimer;
+    private CancellationTokenSource? _filmstripJob;
+    private CancellationTokenSource? _rangeJob;
+    private int _rangeCount;
+    private bool _rangeDone;
+    private int _playIndex;
+    private bool _disposed;
 
     /// <summary>Creates the importer for <paramref name="source"/>.</summary>
     /// <param name="service">The running engine.</param>
@@ -61,7 +74,38 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         IsVideo = VideoPatterns.Any(p => source.EndsWith(p[1..], StringComparison.OrdinalIgnoreCase));
         Name = Path.GetFileNameWithoutExtension(source);
         Title = wallpaperFor is null ? "New video screen" : "Wallpaper";
+        _session = Path.Combine(_previewFolder, Guid.NewGuid().ToString("N"));
+        _playTimer = new DispatcherTimer(PlayInterval(), DispatcherPriority.Background, (_, _) => PlayTick());
     }
+
+    /// <summary>Pictures from across the video, for choosing the part to loop; null until each is ready.</summary>
+    public ObservableCollection<Bitmap?> Thumbnails { get; } = [];
+
+    /// <summary>The longest loop a screen can hold, in seconds.</summary>
+    public double MaxLengthSeconds { get; } = ClipLimits.MaxFrames / (double)BakeRequest.DefaultFps;
+
+    /// <summary>Whether the preview of the chosen part is playing.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PlayIcon))]
+    [NotifyPropertyChangedFor(nameof(PlayTip))]
+    public partial bool IsPlaying { get; set; } = true;
+
+    public Geometry PlayIcon => IsPlaying ? Icons.Pause : Icons.Play;
+
+    public string PlayTip => IsPlaying ? "Pause the preview" : "Play the preview";
+
+    /// <summary>The time of the preview picture showing, in seconds.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PlayheadText))]
+    public partial double PlayheadSeconds { get; set; } = -1d;
+
+    public string PlayheadText => PlayheadSeconds < 0d
+        ? $"{Clock(StartSeconds)} / {Clock(DurationSeconds)}"
+        : $"{Clock(PlayheadSeconds)} / {Clock(DurationSeconds)}";
+
+    /// <summary>How far the preview of the chosen part has got, or null once it is all ready.</summary>
+    [ObservableProperty]
+    public partial string? PreviewProgressText { get; set; }
 
     /// <summary>Raised when the window should close; carries the screen id made or changed, or null.</summary>
     public event EventHandler<string?>? Finished;
@@ -98,13 +142,16 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
     public partial CropRect Crop { get; set; } = CropRect.Full;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SourceSizeText))]
     public partial int SourceWidth { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SourceSizeText))]
     public partial int SourceHeight { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(LengthText))]
+    [NotifyPropertyChangedFor(nameof(PlayheadText))]
     public partial double DurationSeconds { get; set; }
 
     [ObservableProperty]
@@ -180,9 +227,11 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
             var length = Math.Max(0d, EndSeconds - StartSeconds);
             var c = CultureInfo.CurrentCulture;
             var megabytes = length * BakeRequest.DefaultFps * PanelWidth * PanelHeight * 0.11d / 1_000_000d;
-            return $"{Clock(StartSeconds)} to {Clock(EndSeconds)} · {length.ToString("0.0", c)} s loop · about {Math.Max(1d, megabytes).ToString("0", c)} MB";
+            return $"{length.ToString("0.0", c)} s loop · about {Math.Max(1d, megabytes).ToString("0", c)} MB";
         }
     }
+
+    public string SourceSizeText => SourceWidth > 0 ? $"{SourceWidth} × {SourceHeight}" : string.Empty;
 
     public string SpeedText => Speed.ToString("0.##", CultureInfo.CurrentCulture) + "×";
 
@@ -204,8 +253,7 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
                 SourceWidth = probe.Width;
                 SourceHeight = probe.Height;
                 DurationSeconds = Math.Round((probe.Duration ?? DefaultLength).TotalSeconds, 2);
-                EndSeconds = Math.Min(DurationSeconds, DefaultLength.TotalSeconds);
-                StartSeconds = 0d;
+                (StartSeconds, EndSeconds) = Filmstrip.Limit(0d, Math.Min(DurationSeconds, DefaultLength.TotalSeconds), DurationSeconds, MaxLengthSeconds, FilmstripEdge.End);
             }
             else
             {
@@ -221,9 +269,15 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
 
             Crop = CropRect.Cover(SourceWidth, SourceHeight, PanelWidth, PanelHeight);
             Status = IsVideo
-                ? "Drag the box to choose the part of the video to show. The wheel or the corner resizes it."
+                ? "Drag the box to choose what the panel shows, and the handles below to choose the part that loops."
                 : "Drag the box to choose the part of the picture to show. The wheel or the corner resizes it.";
             IsLoaded = true;
+            if (IsVideo)
+            {
+                StartFilmstrip();
+                StartRangePreview();
+                _playTimer.Start();
+            }
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
         {
@@ -233,23 +287,15 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         }
     }
 
-    partial void OnStartSecondsChanged(double value)
-    {
-        if (value > EndSeconds - 0.5d && EndSeconds > 0d)
-        {
-            EndSeconds = Math.Min(DurationSeconds, value + 0.5d);
-        }
+    partial void OnStartSecondsChanged(double value) => ScheduleRangePreview();
 
-        SchedulePreview(value);
-    }
+    partial void OnEndSecondsChanged(double value) => ScheduleRangePreview();
 
-    partial void OnEndSecondsChanged(double value)
-    {
-        if (value < StartSeconds + 0.5d && value > 0d)
-        {
-            StartSeconds = Math.Max(0d, value - 0.5d);
-        }
-    }
+    partial void OnSpeedChanged(double value) => _playTimer.Interval = PlayInterval();
+
+    /// <summary>Pauses or resumes the preview.</summary>
+    [RelayCommand]
+    private void TogglePlay() => IsPlaying = !IsPlaying;
 
     /// <summary>Shows the whole width or height of the picture again.</summary>
     [RelayCommand]
@@ -267,6 +313,12 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
     [RelayCommand(CanExecute = nameof(CanCreate))]
     private async Task CreateAsync()
     {
+        if (!_rangeDone)
+        {
+            _previewDelay?.Cancel();
+            _rangeJob?.Cancel();
+        }
+
         IsBusy = true;
         Problem = null;
         Progress = 0d;
@@ -344,6 +396,15 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
             IsBusy = false;
             _work.Dispose();
             _work = null;
+            ResumeRangePreview();
+        }
+    }
+
+    private void ResumeRangePreview()
+    {
+        if (IsVideo && IsLoaded && !IsReviewing && !_rangeDone && !_disposed)
+        {
+            StartRangePreview();
         }
     }
 
@@ -378,6 +439,7 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         }
 
         Status = "Change anything you like, then create it again.";
+        ResumeRangePreview();
     }
 
     /// <summary>Opens the folder with the downloads and the loops made into screens.</summary>
@@ -404,8 +466,28 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
+        _disposed = true;
         _work?.Cancel();
         _previewDelay?.Cancel();
+        _playTimer.Stop();
+        _filmstripJob?.Cancel();
+        _rangeJob?.Cancel();
+        foreach (var thumbnail in Thumbnails)
+        {
+            thumbnail?.Dispose();
+        }
+
+        Thumbnails.Clear();
+        var session = _session;
+        _ = Task.Run(async () =>
+        {
+            // The helpers stop within a moment of being cancelled; give them time to let go of their files.
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            if (Directory.Exists(session))
+            {
+                TryDeleteFolder(session);
+            }
+        });
         StopReview();
         if (_made is { } made)
         {
@@ -479,7 +561,47 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         return probe;
     }
 
-    private void SchedulePreview(double seconds)
+    private TimeSpan PlayInterval() => TimeSpan.FromSeconds(1d / (BakeRequest.DefaultFps * Math.Clamp(Speed, 0.1d, 4d)));
+
+    private async void StartFilmstrip()
+    {
+        Thumbnails.Clear();
+        for (var i = 0; i < FilmstripCount; i++)
+        {
+            Thumbnails.Add(null);
+        }
+
+        var work = _filmstripJob = new CancellationTokenSource();
+        var frames = new Progress<ExtractedFrame>(f =>
+        {
+            if (work.IsCancellationRequested || f.Index is < 0 or >= FilmstripCount)
+            {
+                return;
+            }
+
+            try
+            {
+                var previous = Thumbnails[f.Index];
+                Thumbnails[f.Index] = new Bitmap(f.Path);
+                previous?.Dispose();
+            }
+            catch (Exception ex) when (ex is IOException or ArgumentException or InvalidOperationException)
+            {
+                _logger.LogDebug("Filmstrip picture {Index} could not be shown: {Error}", f.Index, ex.Message);
+            }
+        });
+
+        try
+        {
+            await MediaJobs.FilmstripAsync(Source, FilmstripCount, Path.Combine(_session, "strip"), frames, work.Token);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or OperationCanceledException or InvalidOperationException)
+        {
+            _logger.LogDebug("The filmstrip stopped: {Error}", ex.Message);
+        }
+    }
+
+    private void ScheduleRangePreview()
     {
         if (!IsVideo || !IsLoaded)
         {
@@ -488,26 +610,101 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
 
         _previewDelay?.Cancel();
         var delay = _previewDelay = new CancellationTokenSource();
-        _ = Task.Delay(300, delay.Token).ContinueWith(
-            async t =>
+        _ = Task.Delay(RangeDelay, delay.Token).ContinueWith(
+            t =>
             {
-                if (t.IsCanceled)
+                if (!t.IsCanceled && !_disposed)
                 {
-                    return;
-                }
-
-                try
-                {
-                    await ProbeAsync(TimeSpan.FromSeconds(seconds), delay.Token);
-                }
-                catch (Exception ex) when (ex is IOException or InvalidDataException or OperationCanceledException or InvalidOperationException)
-                {
-                    _logger.LogDebug("Preview at {Seconds}s failed: {Error}", seconds, ex.Message);
+                    StartRangePreview();
                 }
             },
             CancellationToken.None,
             TaskContinuationOptions.None,
             TaskScheduler.FromCurrentSynchronizationContext());
+    }
+
+    private async void StartRangePreview()
+    {
+        _rangeJob?.Cancel();
+        var work = _rangeJob = new CancellationTokenSource();
+        var folder = Path.Combine(_session, "range-" + (++_rangeCount).ToString(CultureInfo.InvariantCulture));
+        var start = StartSeconds;
+        var end = EndSeconds;
+        var expected = Math.Max(1d, (end - start) * BakeRequest.DefaultFps);
+        _frames.Clear();
+        _rangeDone = false;
+        _playIndex = 0;
+        PreviewProgressText = "Preparing the preview...";
+        var frames = new Progress<ExtractedFrame>(f =>
+        {
+            if (work.IsCancellationRequested)
+            {
+                return;
+            }
+
+            _frames.Add(f);
+            PreviewProgressText = $"Preparing the preview... {Math.Min(99d, _frames.Count / expected * 100d).ToString("0", CultureInfo.CurrentCulture)}%";
+        });
+
+        try
+        {
+            await MediaJobs.PreviewFramesAsync(Source, folder, TimeSpan.FromSeconds(start), TimeSpan.FromSeconds(end), frames, work.Token);
+            if (!work.IsCancellationRequested)
+            {
+                _rangeDone = true;
+                PreviewProgressText = null;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException)
+        {
+            _logger.LogDebug("The preview stopped: {Error}", ex.Message);
+            if (!work.IsCancellationRequested)
+            {
+                _rangeDone = true;
+                PreviewProgressText = _frames.Count == 0 ? "The preview could not be made; the screen can still be created." : null;
+            }
+        }
+        finally
+        {
+            if (work.IsCancellationRequested)
+            {
+                _ = Task.Run(() => TryDeleteFolder(folder));
+            }
+        }
+    }
+
+    private void PlayTick()
+    {
+        if (!IsPlaying || IsBusy || IsReviewing || _frames.Count == 0)
+        {
+            return;
+        }
+
+        if (_playIndex >= _frames.Count)
+        {
+            if (!_rangeDone)
+            {
+                return;
+            }
+
+            _playIndex = 0;
+        }
+
+        var frame = _frames[_playIndex++];
+        try
+        {
+            var previous = Preview;
+            Preview = new Bitmap(frame.Path);
+            previous?.Dispose();
+            PlayheadSeconds = frame.Time.TotalSeconds;
+        }
+        catch (Exception ex) when (ex is IOException or ArgumentException or InvalidOperationException)
+        {
+            _logger.LogDebug("Preview frame {Index} could not be shown: {Error}", frame.Index, ex.Message);
+        }
     }
 
     private static string Clock(double seconds)
@@ -559,6 +756,11 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
         _reviewTimer = null;
         IsReviewing = false;
         ExportedFile = null;
+        lock (_renderGate)
+        {
+            _renderer?.Dispose();
+            _renderer = null;
+        }
     }
 
     private void RenderReviewFrame()
@@ -604,7 +806,15 @@ public sealed partial class MediaImportViewModel : ObservableObject, IDisposable
 
         if (made.DeleteFolder)
         {
-            TryDeleteFolder(made.Folder);
+            try
+            {
+                ScreenWorkshop.DeleteFolder(made.Folder);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _logger.LogWarning("Could not remove {Screen}: {Error}", made.Id, ex.Message);
+            }
+
             return;
         }
 

@@ -20,6 +20,10 @@ public static class MediaJobs
     internal const string BakeArgument = "--bake-video";
     internal const string ProbeArgument = "--probe-video";
     internal const string ExportArgument = "--export-video";
+    internal const string FilmstripArgument = "--filmstrip";
+    internal const string PreviewArgument = "--preview-frames";
+
+    private static readonly string[] Commands = [BakeArgument, ProbeArgument, ExportArgument, FilmstripArgument, PreviewArgument];
 
     private static readonly CultureInfo C = CultureInfo.InvariantCulture;
 
@@ -73,15 +77,27 @@ public static class MediaJobs
         await RunAsync([ExportArgument, clip, mp4, speed.ToString("R", C)], null, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>Writes a filmstrip of <paramref name="count"/> pictures to <paramref name="folder"/>, reporting each as it is ready.</summary>
+    public static async Task FilmstripAsync(string source, int count, string folder, IProgress<ExtractedFrame> frames, CancellationToken cancellationToken)
+    {
+        await RunAsync([FilmstripArgument, source, count.ToString(C), folder], null, cancellationToken, frames).ConfigureAwait(false);
+    }
+
+    /// <summary>Writes the preview frames of a part of the video to <paramref name="folder"/>, reporting each as it is ready.</summary>
+    public static async Task PreviewFramesAsync(string source, string folder, TimeSpan start, TimeSpan end, IProgress<ExtractedFrame> frames, CancellationToken cancellationToken)
+    {
+        string[] arguments = [PreviewArgument, source, folder, start.Ticks.ToString(C), end.Ticks.ToString(C), BakeRequest.DefaultFps.ToString(C)];
+        await RunAsync(arguments, null, cancellationToken, frames).ConfigureAwait(false);
+    }
+
     /// <summary>
-    /// Handles a <see cref="BakeArgument"/>, <see cref="ProbeArgument"/> or
-    /// <see cref="ExportArgument"/> command line in the child. Returns false
-    /// when the arguments are none of them.
+    /// Handles one of the video command lines in the child. Returns false when
+    /// the arguments are none of them.
     /// </summary>
     public static bool TryRunChild(string[] args, out int exitCode)
     {
         exitCode = 0;
-        if (args.Length == 0 || (args[0] != BakeArgument && args[0] != ProbeArgument && args[0] != ExportArgument))
+        if (args.Length == 0 || !Commands.Contains(args[0]))
         {
             return false;
         }
@@ -148,6 +164,23 @@ public static class MediaJobs
                 var frames = ClipExporter.Export(args[1], args[2], double.Parse(args[3], C), cancellationToken: cancel.Token);
                 output.WriteLine($"done {frames.ToString(C)}");
             }
+            else if (args[0] == FilmstripArgument && args.Length == 4)
+            {
+                var frames = VideoFrames.Filmstrip(args[1], int.Parse(args[2], C), args[3], f => WriteFrame(output, f), cancel.Token);
+                output.WriteLine($"done {frames.ToString(C)}");
+            }
+            else if (args[0] == PreviewArgument && args.Length == 6)
+            {
+                var frames = VideoFrames.Range(
+                    args[1],
+                    args[2],
+                    TimeSpan.FromTicks(long.Parse(args[3], C)),
+                    TimeSpan.FromTicks(long.Parse(args[4], C)),
+                    int.Parse(args[5], C),
+                    f => WriteFrame(output, f),
+                    cancel.Token);
+                output.WriteLine($"done {frames.ToString(C)}");
+            }
             else
             {
                 output.WriteLine("error The command line was not understood.");
@@ -169,7 +202,13 @@ public static class MediaJobs
         return true;
     }
 
-    private static async Task<string[]> RunAsync(string[] arguments, IProgress<BakeProgress>? progress, CancellationToken cancellationToken)
+    private static void WriteFrame(TextWriter output, ExtractedFrame frame)
+    {
+        output.WriteLine($"frame {frame.Index.ToString(C)} {frame.Time.Ticks.ToString(C)} {frame.Path}");
+        output.Flush();
+    }
+
+    private static async Task<string[]> RunAsync(string[] arguments, IProgress<BakeProgress>? progress, CancellationToken cancellationToken, IProgress<ExtractedFrame>? extracted = null)
     {
         var exe = Environment.ProcessPath ?? throw new InvalidOperationException("Panelith cannot find its own executable.");
         var start = new ProcessStartInfo(exe)
@@ -212,6 +251,16 @@ public static class MediaJobs
                         && int.TryParse(values[1], NumberStyles.Integer, C, out var frames))
                     {
                         progress?.Report(new BakeProgress(fraction < 0d ? null : fraction, frames));
+                    }
+
+                    break;
+                case "frame" when parts.Length == 2:
+                    var fields = parts[1].Split(' ', 3);
+                    if (fields.Length == 3
+                        && int.TryParse(fields[0], NumberStyles.Integer, C, out var index)
+                        && long.TryParse(fields[1], NumberStyles.Integer, C, out var ticks))
+                    {
+                        extracted?.Report(new ExtractedFrame(index, TimeSpan.FromTicks(ticks), fields[2]));
                     }
 
                     break;
