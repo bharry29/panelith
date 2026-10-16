@@ -86,10 +86,11 @@ if (-not $gh) {
     if (-not (Test-Path $gh)) { throw 'The GitHub CLI was not found. Install it from https://cli.github.com.' }
 }
 if (-not $env:GH_TOKEN) {
-    & $gh auth status --hostname github.com *> $null
+    # Windows PowerShell turns redirected stderr into terminating errors under 'Stop'.
+    & { $ErrorActionPreference = 'Continue'; & $gh auth status --hostname github.com 2>&1 | Out-Null }
     if ($LASTEXITCODE -ne 0) {
         # Fall back to the sign-in git itself uses for pushes.
-        $credential = "protocol=https`nhost=github.com`n`n" | git credential fill 2>$null
+        $credential = & { $ErrorActionPreference = 'Continue'; "protocol=https`nhost=github.com`n`n" | git credential fill 2>$null }
         $token = ($credential | Where-Object { $_ -like 'password=*' } | Select-Object -First 1) -replace '^password=', ''
         if (-not $token) { throw 'Not signed in to GitHub. Run: gh auth login' }
         $env:GH_TOKEN = $token
