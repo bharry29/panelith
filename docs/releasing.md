@@ -42,6 +42,8 @@ The script stops at the first problem. It checks that `main` is clean, pushed an
 | `SHA256SUMS.txt` | Hashes of every asset |
 | `Panelith-code-signing.cer` | The public signing certificate, for people who want to check or trust it |
 
+Afterwards, run `./build/publish-wiki.ps1` so the [wiki](https://github.com/bharry29/panelith/wiki) matches `docs/`. The wiki is generated, so edit `docs/` rather than the wiki.
+
 Use `-Draft` to publish a draft first. Installed copies read `releases/latest`, which ignores drafts and pre-releases, so a draft is safe to inspect; publishing it makes it live.
 
 ## How installed copies find a release
