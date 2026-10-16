@@ -1,0 +1,40 @@
+name: Bug report
+description: Something does not work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please check [Troubleshooting](https://github.com/bharry29/panelith/blob/main/docs/troubleshooting.md) first. Security problems should be reported privately; see [SECURITY.md](https://github.com/bharry29/panelith/blob/main/SECURITY.md).
+  - type: input
+    id: version
+    attributes:
+      label: Panelith version
+      description: Shown at the bottom of Settings, next to Activity.
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: panel
+    attributes:
+      label: Panel
+      description: The model, and its size if it comes in several.
+      placeholder: Thermalright Trofeo Vision 9.16"
+  - type: input
+    id: os
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: The relevant part of today's log from `%APPDATA%\Panelith\logs`, or the Activity list in Settings.
+      render: text

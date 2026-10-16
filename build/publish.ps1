@@ -9,11 +9,8 @@
     3. The Inno Setup installer, to artifacts\installer, when ISCC.exe is available.
 
     Signing is opt-in through environment variables, so no certificate details
-    live in the repository:
-        PANELITH_SIGN_THUMBPRINT   SHA-1 thumbprint of a certificate in the user or machine store, or
-        PANELITH_SIGN_PFX          path to a .pfx file, with
-        PANELITH_SIGN_PASSWORD     its password.
-        PANELITH_SIGN_TIMESTAMP    RFC 3161 timestamp server (default http://timestamp.digicert.com).
+    live in the repository. See build\sign-file.ps1 for the variables.
+    build\release.ps1 runs this script and then publishes the GitHub release.
 
 .EXAMPLE
     ./build/publish.ps1
@@ -84,41 +81,12 @@ if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXIT
 # Native packages (SkiaSharp, HarfBuzz) ship debug symbols that would triple the download.
 Get-ChildItem $publishDir -Recurse -Filter *.pdb | Remove-Item -Force
 
-function Find-SignTool {
-    $onPath = Get-Command signtool.exe -ErrorAction SilentlyContinue
-    if ($onPath) { return $onPath.Source }
-
-    $kits = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'
-    if (Test-Path $kits) {
-        $found = Get-ChildItem $kits -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -match '\\x64\\' } |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1
-        if ($found) { return $found.FullName }
-    }
-
-    return $null
-}
-
-$signArgs = $null
-if ($env:PANELITH_SIGN_THUMBPRINT -or $env:PANELITH_SIGN_PFX) {
-    $signTool = Find-SignTool
-    if (-not $signTool) { throw 'A signing certificate is configured but signtool.exe was not found. Install the Windows SDK.' }
-
-    $timestamp = if ($env:PANELITH_SIGN_TIMESTAMP) { $env:PANELITH_SIGN_TIMESTAMP } else { 'http://timestamp.digicert.com' }
-    $signArgs = @('sign', '/fd', 'SHA256', '/tr', $timestamp, '/td', 'SHA256')
-    if ($env:PANELITH_SIGN_THUMBPRINT) {
-        $signArgs += @('/sha1', $env:PANELITH_SIGN_THUMBPRINT)
-    }
-    else {
-        $signArgs += @('/f', $env:PANELITH_SIGN_PFX)
-        if ($env:PANELITH_SIGN_PASSWORD) { $signArgs += @('/p', $env:PANELITH_SIGN_PASSWORD) }
-    }
-
+$signScript = Join-Path $PSScriptRoot 'sign-file.ps1'
+$signing = [bool]($env:PANELITH_SIGN_THUMBPRINT -or $env:PANELITH_SIGN_PFX)
+if ($signing) {
     $toSign = Get-ChildItem $publishDir -File | Where-Object { $_.Name -like 'Panelith*.exe' -or $_.Name -like 'Panelith*.dll' }
-    Write-Host "Signing $($toSign.Count) files with $signTool"
-    & $signTool @signArgs @($toSign.FullName)
-    if ($LASTEXITCODE -ne 0) { throw "signtool failed with exit code $LASTEXITCODE." }
+    Write-Host "Signing $($toSign.Count) files"
+    & $signScript -Path ([string[]] $toSign.FullName)
 }
 else {
     Write-Warning 'No signing certificate configured (PANELITH_SIGN_THUMBPRINT or PANELITH_SIGN_PFX); the build is unsigned.'
@@ -143,9 +111,10 @@ if (-not $iscc) {
 }
 
 $isccArgs = @("/DAppVersion=$Version", "/DPublishDir=$publishDir", '/Q')
-if ($signArgs) {
-    $quoted = ($signArgs | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } }) -join ' '
-    $isccArgs += @('/DSign', "/Spanelith=`"$signTool`" $quoted `$f")
+if ($signing) {
+    # Inno Setup turns $q into a quote and $f into the quoted file to sign;
+    # literal quotes would not survive Windows PowerShell's argument passing.
+    $isccArgs += @('/DSign', "/Spanelith=powershell.exe -NoProfile -ExecutionPolicy Bypass -File `$q$signScript`$q `$f")
 }
 
 & $iscc @isccArgs (Join-Path $root 'installer\panelith.iss')

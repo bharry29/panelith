@@ -27,6 +27,12 @@ coverage/
 .DS_Store
 Thumbs.db
 
+# Signing secrets never belong in the repository
+*.pfx
+*.p12
+*.priv
+NetSparkle_Ed25519.*
+
 # Local runtime state (config, logs, captured frames)
 .panelith/
 *.log

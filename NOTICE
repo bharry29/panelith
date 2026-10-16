@@ -1,8 +1,12 @@
 Panelith
-Copyright (c) Panelith contributors
+Copyright (c) 2026 Bharath Vadlamannati
 
-This product includes software developed by the Panelith contributors,
-licensed under the Apache License, Version 2.0 (see LICENSE).
+Panelith is licensed under the PolyForm Noncommercial License 1.0.0 (see
+LICENSE). It is free for noncommercial use; commercial use needs a separate
+license from the copyright holder.
+
+Versions published before 0.1.0 were released under the Apache License,
+Version 2.0, and copies obtained under those terms keep them.
 
 ================================================================================
 Protocol provenance and clean-room statement
@@ -17,7 +21,7 @@ from protocol *descriptions* -- byte layouts, command opcodes, handshake
 sequences and pixel encodings -- that have been published by the hardware
 reverse-engineering community. No source code was copied from any of the
 projects listed below, several of which are GPL-licensed and therefore
-incompatible with this project's Apache-2.0 license. Protocol facts (which byte
+incompatible with this project's license. Protocol facts (which byte
 means what) are not themselves copyrightable; the expression of those facts in
 this repository is original.
 

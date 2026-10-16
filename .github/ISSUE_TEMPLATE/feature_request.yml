@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest something Panelith should do.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: Describe what you are trying to achieve, rather than a specific solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could Panelith help?
+  - type: textarea
+    id: other
+    attributes:
+      label: Anything else
+      description: Screenshots, examples from other apps, or links.

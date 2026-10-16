@@ -21,6 +21,7 @@ public sealed partial class App : Application
     private AppLog? _log;
     private AppSettingsStore? _store;
     private AppSessionStore? _sessionStore;
+    private UpdateService? _updates;
     private AppSession _session = new();
     private TrayIcon? _tray;
     private bool _quitting;
@@ -116,7 +117,9 @@ public sealed partial class App : Application
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 _service = service;
-                _viewModel = new MainViewModel(service, _store!, settings, _session) { IsWindowVisible = _window!.IsVisible };
+                _updates = new UpdateService(service.Runtime.Paths, _log!, settings.CheckForUpdates);
+                _updates.QuitRequested += () => Dispatcher.UIThread.InvokeAsync(QuitAsync);
+                _viewModel = new MainViewModel(service, _store!, settings, _session, _updates) { IsWindowVisible = _window!.IsVisible };
                 _viewModel.ElevationRequested += (_, _) => RestartElevated();
                 _viewModel.ProfilesChanged += (_, _) => RebuildTrayMenu();
                 _viewModel.ProfileController.PropertyChanged += (_, e) =>
@@ -347,6 +350,7 @@ public sealed partial class App : Application
 
         SaveSession();
         _quitting = true;
+        _updates?.Dispose();
         _viewModel?.Dispose();
         if (_service is not null)
         {

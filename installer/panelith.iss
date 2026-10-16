@@ -31,7 +31,8 @@ AppId={{6C0B3E52-4D7A-4E0B-9C61-2F3A9B8D7E14}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
-AppPublisher=Panelith contributors
+AppPublisher=Bharath Vadlamannati
+AppCopyright=Copyright (c) 2026 Bharath Vadlamannati
 AppPublisherURL=https://github.com/bharry29/panelith
 AppSupportURL=https://github.com/bharry29/panelith/issues
 VersionInfoVersion={#AppVersion}
@@ -85,6 +86,10 @@ Filename: "{app}\tools\PawnIO_setup.exe"; Parameters: "-install -silent"; Status
 ; Windows N editions ship without Media Foundation, which video screens need.
 Filename: "{sys}\dism.exe"; Parameters: "/Online /Add-Capability /CapabilityName:Media.MediaFeaturePack~~~~0.0.1.0 /NoRestart /Quiet"; StatusMsg: "Adding the Windows Media Feature Pack for video screens..."; Check: IsMediaFoundationMissing; Flags: runhidden waituntilterminated
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent runasoriginaluser
+; An in-app update passes /RELAUNCH=1. Restart through the start-up task when
+; there is one, so a copy that runs elevated comes back elevated.
+Filename: "{sys}\schtasks.exe"; Parameters: "/Run /TN ""{#TaskName}"""; Flags: runhidden nowait; Check: ShouldRelaunch and StartupTaskExists
+Filename: "{app}\{#AppExe}"; Parameters: "--restarted"; Flags: nowait runasoriginaluser; Check: ShouldRelaunch and not StartupTaskExists
 
 [UninstallDelete]
 ; The copy of yt-dlp that "Update downloader" keeps for this user.
@@ -107,6 +112,16 @@ function IsPawnIOInstalled(): Boolean;
 begin
   Result := RegKeyExists(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PawnIO') or
     RegKeyExists(HKLM, 'SYSTEM\CurrentControlSet\Services\PawnIO');
+end;
+
+function ShouldRelaunch(): Boolean;
+begin
+  Result := ExpandConstant('{param:relaunch|0}') = '1';
+end;
+
+function StartupTaskExists(): Boolean;
+begin
+  Result := RunHidden('{sys}\schtasks.exe', '/Query /TN "{#TaskName}"') = 0;
 end;
 
 function IsMediaFoundationMissing(): Boolean;

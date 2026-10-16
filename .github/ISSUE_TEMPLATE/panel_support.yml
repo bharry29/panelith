@@ -1,0 +1,41 @@
+name: Panel support
+description: Ask for a panel to be supported, or report how a supported panel works.
+labels: [device]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        See [Device support](https://github.com/bharry29/panelith/blob/main/docs/device-support.md) for what is supported, and [Adding a panel](https://github.com/bharry29/panelith/blob/main/docs/contributing.md#adding-a-panel) for what helps most.
+  - type: input
+    id: model
+    attributes:
+      label: Panel model
+      placeholder: BeadaPanel 5
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: This report is about
+      options:
+        - A panel Panelith does not support yet
+        - A supported panel that works (please confirm it!)
+        - A supported panel that does not work
+    validations:
+      required: true
+  - type: input
+    id: usb
+    attributes:
+      label: USB id
+      description: Vendor and product id, for example from Device Manager > Details > Hardware Ids.
+      placeholder: 0416:5302
+  - type: textarea
+    id: devices
+    attributes:
+      label: Output of `panelith devices -v`
+      render: text
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Links to protocol notes, the vendor's software, USB captures, or photos.

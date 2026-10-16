@@ -159,6 +159,34 @@
         </StackPanel>
       </Border>
 
+      <!-- Updates -->
+      <Border Classes="card">
+        <StackPanel Spacing="14">
+          <DockPanel>
+            <ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding Updates.CheckAutomatically}" IsVisible="{Binding Updates.IsSupported}"
+                          OnContent="" OffContent="" AutomationProperties.Name="Check for updates automatically" />
+            <StackPanel Spacing="2">
+              <TextBlock Text="Updates" Classes="h2" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="{Binding Updates.CurrentVersion, StringFormat='You have Panelith {0}. New versions are checked against a signature before they are installed.'}" />
+            </StackPanel>
+          </DockPanel>
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="16,0,0,0" IsVisible="{Binding Updates.IsSupported}">
+              <Button Classes="ghost" Content="What's new" Command="{Binding OpenReleaseNotesCommand}" IsVisible="{Binding Updates.HasUpdate}" />
+              <Button Classes="accent" Command="{Binding InstallUpdateCommand}" IsVisible="{Binding Updates.HasUpdate}" IsEnabled="{Binding Updates.IsIdle}"
+                      Content="{Binding Updates.AvailableVersion, StringFormat='Install {0} and restart'}" />
+              <Button Content="Check now" Command="{Binding CheckForUpdatesCommand}" IsEnabled="{Binding Updates.IsIdle}" />
+            </StackPanel>
+            <StackPanel Spacing="6" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Updates.Status}" TextWrapping="Wrap" />
+              <ProgressBar Minimum="0" Maximum="100" Value="{Binding Updates.DownloadPercent}" Width="260" HorizontalAlignment="Left"
+                           IsVisible="{Binding Updates.IsBusy}" />
+            </StackPanel>
+          </DockPanel>
+        </StackPanel>
+      </Border>
+
       <!-- Folders -->
       <Border Classes="card">
         <StackPanel Spacing="12">

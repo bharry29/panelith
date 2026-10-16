@@ -15,10 +15,10 @@
 
   <PropertyGroup Label="Package metadata">
     <Product>Panelith</Product>
-    <Company>Panelith contributors</Company>
-    <Authors>Panelith contributors</Authors>
-    <Copyright>Copyright (c) Panelith contributors</Copyright>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <Company>Bharath Vadlamannati</Company>
+    <Authors>Bharath Vadlamannati</Authors>
+    <Copyright>Copyright (c) 2026 Bharath Vadlamannati</Copyright>
+    <PackageLicenseExpression>PolyForm-Noncommercial-1.0.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/bharry29/panelith</PackageProjectUrl>
     <RepositoryUrl>https://github.com/bharry29/panelith</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

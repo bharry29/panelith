@@ -18,12 +18,20 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     private const string RtssDownload = "https://www.guru3d.com/download/rtss-rivatuner-statistics-server-download/";
 
-    public SettingsViewModel(PanelithService service, AppSettingsStore store, AppSettings settings, HotkeyService hotkeys)
+    public SettingsViewModel(PanelithService service, AppSettingsStore store, AppSettings settings, HotkeyService hotkeys, UpdateService updates)
     {
         _service = service;
         _store = store;
         _settings = settings;
+        Updates = updates;
         _loading = true;
+        updates.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(UpdateService.CheckAutomatically))
+            {
+                SaveAppSettings();
+            }
+        };
         HotkeysEnabled = settings.HotkeysEnabled;
         NextScreenHotkey = settings.NextScreenHotkey;
         NextProfileHotkey = settings.NextProfileHotkey;
@@ -112,6 +120,18 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [RelayCommand]
     private void OpenRtssDownload() => Process.Start(new ProcessStartInfo(RtssDownload) { UseShellExecute = true });
+
+    /// <summary>Finds, downloads and installs new versions.</summary>
+    public UpdateService Updates { get; }
+
+    [RelayCommand]
+    private Task CheckForUpdatesAsync() => Updates.CheckAsync(userAsked: true);
+
+    [RelayCommand]
+    private Task InstallUpdateAsync() => Updates.InstallAsync();
+
+    [RelayCommand]
+    private void OpenReleaseNotes() => Process.Start(new ProcessStartInfo(Updates.ReleaseNotesUrl) { UseShellExecute = true });
 
     private void SaveHotkeys()
     {
@@ -354,6 +374,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             CloseToTray = CloseToTray,
             DemoSensors = DemoSensors,
             SmoothMotion = SmoothMotion,
+            CheckForUpdates = Updates.CheckAutomatically,
         };
 
         try

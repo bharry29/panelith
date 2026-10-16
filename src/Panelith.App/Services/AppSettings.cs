@@ -40,6 +40,9 @@ public sealed record AppSettings
 
     /// <summary>Whether the user has read and accepted the note about downloading YouTube videos.</summary>
     public bool YouTubeAccepted { get; init; }
+
+    /// <summary>Whether Panelith looks for a new version in the background.</summary>
+    public bool CheckForUpdates { get; init; } = true;
 }
 
 /// <summary>Reads and writes <c>app.json</c> next to panelith.json.</summary>

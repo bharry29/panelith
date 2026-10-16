@@ -127,6 +127,7 @@ public sealed partial class DashboardViewModel : ObservableObject, IDisposable
         _network.Detail = "Up " + SensorAccess.Format(hub, WellKnownSensors.NetworkUp);
         _network.History = hub.ResolveHistory(WellKnownSensors.NetworkDown, HistoryWindow);
 
+        MachineName = SensorAccess.Read(hub, WellKnownSensors.HostName)?.Text is { Length: > 0 } host ? host : Environment.MachineName;
         MachineSummary = JoinParts(
             SensorAccess.Format(hub, WellKnownSensors.CpuName, ""),
             SensorAccess.Format(hub, WellKnownSensors.GpuName, ""),

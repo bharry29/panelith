@@ -30,7 +30,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private readonly DispatcherTimer _fast;
     private readonly DispatcherTimer _slow;
 
-    public MainViewModel(PanelithService service, AppSettingsStore store, AppSettings settings, AppSession session)
+    public MainViewModel(PanelithService service, AppSettingsStore store, AppSettings settings, AppSession session, UpdateService updates)
     {
         _service = service;
         var profileStore = new ProfileStore(service.Runtime.Paths);
@@ -61,7 +61,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Dashboard = new DashboardViewModel(service, Screens);
         Sensors = new SensorsViewModel(service);
         Designer = new DesignerViewModel(service, Screens);
-        Settings = new SettingsViewModel(service, store, settings, _hotkeys);
+        Settings = new SettingsViewModel(service, store, settings, _hotkeys, updates);
+        updates.UpdateFound += (_, _) => Toast = $"Panelith {updates.AvailableVersion} is available. Install it from Settings, under Updates.";
         Settings.ElevationRequested += (_, _) => ElevationRequested?.Invoke(this, EventArgs.Empty);
         Settings.HotkeysChanged += (_, _) => RegisterHotkeys();
         Screens.ActiveScreenChanged += (_, _) => OnPropertyChanged(nameof(ActiveScreenName));

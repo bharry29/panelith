@@ -17,6 +17,7 @@
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="NetSparkleUpdater.SparkleUpdater" />
   </ItemGroup>
 
   <ItemGroup>
