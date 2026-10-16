@@ -43,6 +43,14 @@ public sealed record AppSettings
 
     /// <summary>Whether Panelith looks for a new version in the background.</summary>
     public bool CheckForUpdates { get; init; } = true;
+
+    /// <summary>
+    /// Whether Panelith should ask Windows for administrator rights at every
+    /// launch. Set automatically the moment Panelith notices it is running
+    /// elevated, and cleared the moment that request is ever declined, so
+    /// running elevated once is remembered without nagging for it forever.
+    /// </summary>
+    public bool RunElevated { get; init; }
 }
 
 /// <summary>Reads and writes <c>app.json</c> next to panelith.json.</summary>

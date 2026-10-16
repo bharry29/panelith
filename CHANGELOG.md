@@ -2,6 +2,12 @@
 
 Notable changes to Panelith. Versions follow [Semantic Versioning](https://semver.org/), and each section here becomes the notes of its GitHub release.
 
+## [Unreleased]
+
+### App
+
+- **Always run as administrator**: once Panelith notices it is running elevated, it remembers that and asks Windows for permission at every later launch, including one opened without **Run as administrator**, until that request is ever declined. If **Start with Windows** is already on, it is upgraded to the elevated scheduled task automatically, so a restart comes back up elevated too.
+
 ## [0.1.0] - 2026-10-15
 
 The first public release.

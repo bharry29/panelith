@@ -46,14 +46,22 @@ public sealed partial class App : Application
         var migratedFrom = AppPaths.MigrateLegacy(paths.Root);
         _store = new AppSettingsStore(paths);
         var settings = _store.Load();
-        _sessionStore = new AppSessionStore(paths);
-        _session = _sessionStore.Load();
         _log = new AppLog(paths.LogsDirectory);
         var crashLog = _log.CreateLogger("Panelith.App");
         if (migratedFrom is not null)
         {
             crashLog.LogInformation("Moved settings from {From} to {To}.", migratedFrom, paths.Root);
         }
+
+        if (WindowsIntegration.IsSupported && SyncElevation(ref settings, crashLog))
+        {
+            // An elevated copy is taking over; this one has nothing left to do.
+            desktop.Shutdown();
+            return;
+        }
+
+        _sessionStore = new AppSessionStore(paths);
+        _session = _sessionStore.Load();
         if (WindowsIntegration.MigrateLegacyStartup())
         {
             crashLog.LogInformation("Moved start with Windows from RigGlass to Panelith.");
@@ -338,6 +346,63 @@ public sealed partial class App : Application
         if (WindowsIntegration.RelaunchElevated())
         {
             _ = QuitAsync();
+        }
+    }
+
+    /// <summary>
+    /// Keeps "run as administrator" remembered. When this copy is elevated, it
+    /// notes that down and, if "start with Windows" is already on but only as a
+    /// plain sign-in entry, upgrades it to the scheduled task that starts
+    /// elevated too, so a restart comes back up the same way. When it is not
+    /// elevated but the last run was, it relaunches elevated. Returns true when
+    /// an elevated copy was started and this one should exit without doing
+    /// anything else.
+    /// </summary>
+    private bool SyncElevation(ref AppSettings settings, ILogger log)
+    {
+        if (WindowsIntegration.IsElevated)
+        {
+            if (!settings.RunElevated)
+            {
+                settings = settings with { RunElevated = true };
+                TrySaveSettings(settings, log);
+            }
+
+            var (startupEnabled, startupElevated) = WindowsIntegration.StartupState();
+            if (startupEnabled && !startupElevated)
+            {
+                WindowsIntegration.SetStartup(enabled: true);
+            }
+
+            return false;
+        }
+
+        if (!WindowsIntegration.ShouldRelaunchElevated(isElevated: false, settings.RunElevated))
+        {
+            return false;
+        }
+
+        if (WindowsIntegration.RelaunchElevated())
+        {
+            log.LogInformation("Restarting with administrator rights, remembered from the last run.");
+            return true;
+        }
+
+        log.LogInformation("Administrator rights were declined; Panelith will not ask again until it next runs elevated.");
+        settings = settings with { RunElevated = false };
+        TrySaveSettings(settings, log);
+        return false;
+    }
+
+    private void TrySaveSettings(AppSettings settings, ILogger log)
+    {
+        try
+        {
+            _store!.Save(settings);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            log.LogWarning("Could not save app.json: {Message}", ex.Message);
         }
     }
 

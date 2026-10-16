@@ -137,6 +137,15 @@ public static class WindowsIntegration
     }
 
     /// <summary>
+    /// Whether a copy that is not elevated should relaunch elevated because the
+    /// last run was. This is what makes "run as administrator" remembered
+    /// across closing and reopening Panelith: once elevated, always elevated,
+    /// until a relaunch attempt is declined.
+    /// </summary>
+    public static bool ShouldRelaunchElevated(bool isElevated, bool rememberedElevated) =>
+        !isElevated && rememberedElevated;
+
+    /// <summary>
     /// Starts an elevated copy of the app. Returns false when the user declined
     /// the UAC prompt.
     /// </summary>

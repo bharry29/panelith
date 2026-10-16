@@ -71,6 +71,20 @@ public sealed class HardeningTests
     }
 
     [Fact]
+    public void RunningElevatedOnceIsRememberedUntilDeclined()
+    {
+        // Last run was elevated, this one is not: relaunch elevated.
+        Assert.True(WindowsIntegration.ShouldRelaunchElevated(isElevated: false, rememberedElevated: true));
+
+        // Already elevated: nothing to relaunch.
+        Assert.False(WindowsIntegration.ShouldRelaunchElevated(isElevated: true, rememberedElevated: true));
+
+        // Never asked to be elevated: leave it alone.
+        Assert.False(WindowsIntegration.ShouldRelaunchElevated(isElevated: false, rememberedElevated: false));
+        Assert.False(WindowsIntegration.ShouldRelaunchElevated(isElevated: true, rememberedElevated: false));
+    }
+
+    [Fact]
     public void ThreeErrorsInAMinuteMakeABurst()
     {
         var burst = new ErrorBurst(3, TimeSpan.FromSeconds(60));

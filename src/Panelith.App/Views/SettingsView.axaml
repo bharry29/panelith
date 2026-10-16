@@ -67,6 +67,15 @@
           </Grid>
           <Grid ColumnDefinitions="*,Auto">
             <StackPanel Spacing="2">
+              <TextBlock Text="Always run as administrator" FontWeight="SemiBold" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="Remembered automatically: once Panelith runs elevated, it asks Windows for permission every time it opens, until that is ever declined." />
+              <TextBlock Classes="faint" FontSize="12" Text="Restart as administrator to turn this on or off." IsVisible="{Binding !CanChangeRunElevated}" />
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding RunElevated}" IsEnabled="{Binding CanChangeRunElevated}" OnContent="" OffContent="" />
+          </Grid>
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="2">
               <TextBlock Text="Start hidden" FontWeight="SemiBold" />
               <TextBlock Classes="muted" FontSize="12" Text="Open straight to the notification area. The panel still lights up." />
             </StackPanel>

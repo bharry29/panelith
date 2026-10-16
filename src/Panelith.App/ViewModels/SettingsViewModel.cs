@@ -54,6 +54,8 @@ public sealed partial class SettingsViewModel : ObservableObject
             CanRepairStartup = WindowsIntegration.IsElevated;
         }
 
+        RunElevated = settings.RunElevated || WindowsIntegration.IsElevated;
+
         foreach (var entry in service.Log.Snapshot().TakeLast(200))
         {
             Log.Add(entry);
@@ -188,6 +190,16 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial bool StartsElevated { get; set; }
 
+    /// <summary>
+    /// Whether Panelith remembers running as administrator and asks Windows
+    /// for permission at every launch, including after "Start with Windows".
+    /// </summary>
+    [ObservableProperty]
+    public partial bool RunElevated { get; set; }
+
+    /// <summary>Only changeable while already elevated, so there is never a stale promise to elevate that nothing will act on.</summary>
+    public bool CanChangeRunElevated => WindowsIntegration.IsElevated;
+
     [ObservableProperty]
     public partial bool StartMinimized { get; set; }
 
@@ -294,6 +306,24 @@ public sealed partial class SettingsViewModel : ObservableObject
         if (enabled != value)
         {
             StartWithWindows = enabled;
+        }
+    }
+
+    partial void OnRunElevatedChanged(bool value)
+    {
+        if (_loading)
+        {
+            return;
+        }
+
+        _settings = _store.Load() with { RunElevated = value };
+        try
+        {
+            _store.Save(_settings);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StartupMessage = $"Settings could not be saved: {ex.Message}";
         }
     }
 
