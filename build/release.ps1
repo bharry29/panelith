@@ -89,8 +89,17 @@ if (-not $env:GH_TOKEN) {
     # Windows PowerShell turns redirected stderr into terminating errors under 'Stop'.
     & { $ErrorActionPreference = 'Continue'; & $gh auth status --hostname github.com 2>&1 | Out-Null }
     if ($LASTEXITCODE -ne 0) {
-        # Fall back to the sign-in git itself uses for pushes.
-        $credential = & { $ErrorActionPreference = 'Continue'; "protocol=https`nhost=github.com`n`n" | git credential fill 2>$null }
+        # Fall back to the sign-in git itself uses for pushes. The request goes
+        # through a file because Windows PowerShell prefixes piped stdin with a
+        # byte-order mark, which git rejects.
+        $request = [IO.Path]::GetTempFileName()
+        try {
+            [IO.File]::WriteAllText($request, "protocol=https`nhost=github.com`n`n", [Text.Encoding]::ASCII)
+            $credential = & { $ErrorActionPreference = 'Continue'; cmd /c "git credential fill < `"$request`" 2>nul" }
+        }
+        finally {
+            Remove-Item $request -ErrorAction SilentlyContinue
+        }
         $token = ($credential | Where-Object { $_ -like 'password=*' } | Select-Object -First 1) -replace '^password=', ''
         if (-not $token) { throw 'Not signed in to GitHub. Run: gh auth login' }
         $env:GH_TOKEN = $token
