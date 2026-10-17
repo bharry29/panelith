@@ -6,7 +6,7 @@ Installed copies of Panelith keep themselves up to date, using [NetSparkle](http
 
 1. A minute after start-up, and every six hours after that, Panelith downloads a small file listing the newest version (the *appcast*) from the latest GitHub release.
 2. If a newer version exists, a notice appears at the top of the window, and **Settings > Updates** offers **Install … and restart**.
-3. When you choose it, Panelith downloads the installer, checks its signature, closes, installs the update without the setup wizard, and starts again. Windows asks for permission once, as for any installation in Program Files.
+3. When you choose it, Panelith downloads the installer and checks its signature, then Windows asks for permission, as for any installation in Program Files. Approve that and Panelith closes, installs the update without the setup wizard, and starts again. Decline it and Panelith keeps running on the old version; choosing **Install** again asks once more.
 
 Nothing is downloaded or installed without you choosing to. Your screens, profiles and settings are kept.
 

@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Diagnostics;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
@@ -59,7 +61,6 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
             UIFactory = null,
             UserInteractionMode = UserInteractionMode.DownloadNoInstall,
             Configuration = new JSONConfiguration(accessor, Path.Combine(paths.Root, "updates.json")),
-            CustomInstallerArguments = InstallerArguments,
             RelaunchAfterUpdate = false,
             LogWriter = new LogAdapter(_logger),
             TmpDownloadFilePath = Path.Combine(Path.GetTempPath(), "Panelith", "updates"),
@@ -69,6 +70,18 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
         _sparkle.DownloadHadError += (_, _, ex) => Dispatcher.UIThread.Post(() => OnDownloadFailed(ex.Message));
         _sparkle.DownloadedFileIsCorrupt += (_, _) => Dispatcher.UIThread.Post(() => OnDownloadFailed("the download's signature did not match, so it was thrown away"));
         _sparkle.CloseApplicationAsync += () => QuitRequested?.Invoke() ?? Task.CompletedTask;
+
+        // NetSparkle's own installer launch runs the installer through a plain
+        // background script, which Windows silently refuses for an installer
+        // that needs administrator rights: no prompt appears, nothing is
+        // installed, and nothing is logged. Returning false here stops that
+        // launch; LaunchElevatedInstallerAsync runs the installer properly
+        // elevated instead, which does show the prompt.
+        _sparkle.InstallerProcessAboutToStart += (notUsed, downloadFilePath) =>
+        {
+            _ = LaunchElevatedInstallerAsync(downloadFilePath);
+            return false;
+        };
         Status = "Panelith checks for updates in the background.";
         if (checkAutomatically)
         {
@@ -247,6 +260,46 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
             _installing = false;
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Runs the downloaded installer with an explicit administrator request,
+    /// since it needs to write to Program Files. Only Windows showing its own
+    /// elevation prompt can grant that; a plain background process cannot.
+    /// </summary>
+    private async Task LaunchElevatedInstallerAsync(string installerPath)
+    {
+        try
+        {
+            var start = new ProcessStartInfo(installerPath, InstallerArguments) { UseShellExecute = true, Verb = "runas" };
+            using var process = Process.Start(start) ?? throw new InvalidOperationException("The installer did not start.");
+        }
+        catch (Win32Exception ex)
+        {
+            // ERROR_CANCELLED: Windows' own prompt, declined. Panelith keeps running; the next Install tries again.
+            _logger.LogInformation("Installing the update needs administrator permission, which was not given: {Message}", ex.Message);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                Status = "Installing needs administrator permission, which was not given. Try Install again.";
+                _installing = false;
+                IsBusy = false;
+            });
+            return;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("The update could not be installed: {Message}", ex.Message);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                Status = $"The update could not be installed: {ex.Message}";
+                _installing = false;
+                IsBusy = false;
+            });
+            return;
+        }
+
+        _logger.LogInformation("Administrator permission granted; closing Panelith so the update can install.");
+        await _sparkle!.QuitApplication();
     }
 
     private void OnDownloadFailed(string message)

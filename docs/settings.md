@@ -50,7 +50,7 @@ Shows the version you have and whether a newer one is available.
 
 - **Check for updates automatically** (the switch): Panelith checks a minute after it starts and every six hours after that.
 - **Check now** checks straight away.
-- **Install … and restart** downloads the new version, checks its signature, closes Panelith, installs it and starts it again.
+- **Install … and restart** downloads the new version, checks its signature, then asks Windows for permission to install it (it writes to Program Files, so it always needs this, whether or not Panelith itself is currently running elevated). Approve that prompt and Panelith closes, installs and starts again on its own. Decline it and Panelith keeps running on the old version; **Install** tries again.
 - **What's new** opens the release notes.
 
 See [Updates](updates.md).

@@ -2,6 +2,12 @@
 
 Notable changes to Panelith. Versions follow [Semantic Versioning](https://semver.org/), and each section here becomes the notes of its GitHub release.
 
+## [0.1.3] - 2026-10-17
+
+### Fixed
+
+- **In-app updates actually install now.** Choosing **Install … and restart** downloaded the new version correctly, but the step that runs the installer used a plain background script, which Windows silently refuses for an installer that needs administrator rights: no prompt appeared, nothing installed, and Panelith stayed on the old version at every check. It now asks Windows for permission directly, the same as running the installer by hand, so the prompt actually appears and the update completes.
+
 ## [0.1.2] - 2026-10-17
 
 ### App
@@ -53,6 +59,7 @@ The first public release.
 
 - Panelith is now licensed under the PolyForm Noncommercial License 1.0.0. Earlier, unreleased versions were Apache-2.0.
 
+[0.1.3]: https://github.com/bharry29/panelith/releases/tag/v0.1.3
 [0.1.2]: https://github.com/bharry29/panelith/releases/tag/v0.1.2
 [0.1.1]: https://github.com/bharry29/panelith/releases/tag/v0.1.1
 [0.1.0]: https://github.com/bharry29/panelith/releases/tag/v0.1.0
