@@ -36,6 +36,10 @@ The **Profiles** page and the card at the bottom left show why the active profil
 - Some formats need a codec from the Microsoft Store: **HEVC Video Extensions** for H.265, **AV1 Video Extension** for AV1, **VP9 Video Extensions** for WebM.
 - YouTube changes often. When a download fails, the YouTube window offers **Update downloader**, which fetches the newest yt-dlp into your own folder. If a link still fails, download the video another way and use **From a video on this PC…**.
 
+## A deleted screen comes back
+
+Panelith will not delete a screen while something is still reading its files, usually a video it was playing. It keeps trying for five seconds, and if the files are still held it puts the screen back rather than leaving a half-deleted one behind. Show a different screen, wait a moment, and delete it again. The log says `Could not delete` when this happens.
+
 ## A shortcut does nothing
 
 Another program may already use it; **Settings > Shortcuts** says so. Pick another combination. Some games running as administrator only see shortcuts from programs that also run as administrator.
