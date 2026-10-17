@@ -2,6 +2,12 @@
 
 Notable changes to Panelith. Versions follow [Semantic Versioning](https://semver.org/), and each section here becomes the notes of its GitHub release.
 
+## [0.1.2] - 2026-10-17
+
+### App
+
+- **Always run as administrator** is now on by default and asks Windows for administrator rights every time Panelith opens without them, so CPU temperature, clock and power work from the first launch. Saying no only skips that launch instead of turning the option off, and the switch in **Settings > Start-up** can be changed at any time, not only while elevated. A hidden start stays hidden after the prompt.
+
 ## [0.1.1] - 2026-10-16
 
 ### App
@@ -47,5 +53,6 @@ The first public release.
 
 - Panelith is now licensed under the PolyForm Noncommercial License 1.0.0. Earlier, unreleased versions were Apache-2.0.
 
+[0.1.2]: https://github.com/bharry29/panelith/releases/tag/v0.1.2
 [0.1.1]: https://github.com/bharry29/panelith/releases/tag/v0.1.1
 [0.1.0]: https://github.com/bharry29/panelith/releases/tag/v0.1.0

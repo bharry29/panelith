@@ -18,7 +18,7 @@ Frame rate, quality and orientation need the panel connection reopened: change t
 | Setting | What it does |
 | --- | --- |
 | **Start with Windows** | Starts Panelith when you sign in. Turned on while running as administrator, it uses a scheduled task that starts Panelith elevated without a prompt, so CPU sensors always work. |
-| **Always run as administrator** | Set automatically the moment you run Panelith as administrator, not a box you tick yourself. From then on, every launch asks Windows for permission again, including a later window opened without **Run as administrator**, until you decline that prompt once (which turns it off) or you switch it off here while elevated. |
+| **Always run as administrator** | On by default. Every time Panelith opens without administrator rights, including from the Start menu or at sign-in, it asks Windows for them so CPU sensors work. Saying no only skips that one launch; the next one asks again. Turn this off to stop the prompt; the choice is saved. When **Start with Windows** is on as well, the next elevated run switches it to the scheduled task, so sign-in starts elevated without a prompt at all. |
 | **Start hidden** | Starts in the notification area without opening the window. The panel still lights up. |
 | **Keep running when the window is closed** | Closing the window hides it to the notification area. Turn off to quit when the window closes. |
 

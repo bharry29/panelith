@@ -69,10 +69,9 @@
             <StackPanel Spacing="2">
               <TextBlock Text="Always run as administrator" FontWeight="SemiBold" />
               <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
-                         Text="Remembered automatically: once Panelith runs elevated, it asks Windows for permission every time it opens, until that is ever declined." />
-              <TextBlock Classes="faint" FontSize="12" Text="Restart as administrator to turn this on or off." IsVisible="{Binding !CanChangeRunElevated}" />
+                         Text="Asks Windows for permission every time Panelith opens, so CPU sensors work. Saying no only skips that once; turn this off to stop asking." />
             </StackPanel>
-            <ToggleSwitch Grid.Column="1" IsChecked="{Binding RunElevated}" IsEnabled="{Binding CanChangeRunElevated}" OnContent="" OffContent="" />
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding AlwaysRunAsAdministrator}" OnContent="" OffContent="" />
           </Grid>
           <Grid ColumnDefinitions="*,Auto">
             <StackPanel Spacing="2">

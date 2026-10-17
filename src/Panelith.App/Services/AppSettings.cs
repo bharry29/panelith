@@ -45,12 +45,11 @@ public sealed record AppSettings
     public bool CheckForUpdates { get; init; } = true;
 
     /// <summary>
-    /// Whether Panelith should ask Windows for administrator rights at every
-    /// launch. Set automatically the moment Panelith notices it is running
-    /// elevated, and cleared the moment that request is ever declined, so
-    /// running elevated once is remembered without nagging for it forever.
+    /// Whether Panelith asks Windows for administrator rights every time it
+    /// opens without them. Declining only skips that one launch; the next one
+    /// asks again. Only turning it off in Settings stops the prompt.
     /// </summary>
-    public bool RunElevated { get; init; }
+    public bool AlwaysRunAsAdministrator { get; init; } = true;
 }
 
 /// <summary>Reads and writes <c>app.json</c> next to panelith.json.</summary>

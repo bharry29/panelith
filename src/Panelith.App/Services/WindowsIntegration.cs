@@ -137,13 +137,16 @@ public static class WindowsIntegration
     }
 
     /// <summary>
-    /// Whether a copy that is not elevated should relaunch elevated because the
-    /// last run was. This is what makes "run as administrator" remembered
-    /// across closing and reopening Panelith: once elevated, always elevated,
-    /// until a relaunch attempt is declined.
+    /// Whether a copy that is not elevated should ask Windows to relaunch it
+    /// elevated, which it does on every launch while "always run as
+    /// administrator" is on.
     /// </summary>
-    public static bool ShouldRelaunchElevated(bool isElevated, bool rememberedElevated) =>
-        !isElevated && rememberedElevated;
+    public static bool ShouldRelaunchElevated(bool isElevated, bool alwaysRunAsAdministrator) =>
+        !isElevated && alwaysRunAsAdministrator;
+
+    /// <summary>The arguments an elevated relaunch passes on, so a hidden start stays hidden.</summary>
+    public static string RelaunchArguments(IReadOnlyCollection<string> current) =>
+        current.Contains(MinimizedArgument) ? $"{RestartArgument} {MinimizedArgument}" : RestartArgument;
 
     /// <summary>
     /// Starts an elevated copy of the app. Returns false when the user declined
@@ -158,7 +161,7 @@ public static class WindowsIntegration
 
         try
         {
-            Process.Start(new ProcessStartInfo(exe, RestartArgument) { UseShellExecute = true, Verb = "runas" });
+            Process.Start(new ProcessStartInfo(exe, RelaunchArguments(Program.Arguments)) { UseShellExecute = true, Verb = "runas" });
             return true;
         }
         catch (Win32Exception)

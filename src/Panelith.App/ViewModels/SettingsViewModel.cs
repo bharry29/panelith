@@ -54,7 +54,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             CanRepairStartup = WindowsIntegration.IsElevated;
         }
 
-        RunElevated = settings.RunElevated || WindowsIntegration.IsElevated;
+        AlwaysRunAsAdministrator = settings.AlwaysRunAsAdministrator;
 
         foreach (var entry in service.Log.Snapshot().TakeLast(200))
         {
@@ -191,14 +191,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     public partial bool StartsElevated { get; set; }
 
     /// <summary>
-    /// Whether Panelith remembers running as administrator and asks Windows
-    /// for permission at every launch, including after "Start with Windows".
+    /// Whether Panelith asks Windows for administrator rights every time it
+    /// opens without them, including after "Start with Windows".
     /// </summary>
     [ObservableProperty]
-    public partial bool RunElevated { get; set; }
-
-    /// <summary>Only changeable while already elevated, so there is never a stale promise to elevate that nothing will act on.</summary>
-    public bool CanChangeRunElevated => WindowsIntegration.IsElevated;
+    public partial bool AlwaysRunAsAdministrator { get; set; }
 
     [ObservableProperty]
     public partial bool StartMinimized { get; set; }
@@ -309,21 +306,12 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
-    partial void OnRunElevatedChanged(bool value)
+    partial void OnAlwaysRunAsAdministratorChanged(bool value)
     {
-        if (_loading)
+        SaveAppSettings();
+        if (value && !_loading && CanElevate)
         {
-            return;
-        }
-
-        _settings = _store.Load() with { RunElevated = value };
-        try
-        {
-            _store.Save(_settings);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            StartupMessage = $"Settings could not be saved: {ex.Message}";
+            ElevationRequested?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -405,6 +393,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             DemoSensors = DemoSensors,
             SmoothMotion = SmoothMotion,
             CheckForUpdates = Updates.CheckAutomatically,
+            AlwaysRunAsAdministrator = AlwaysRunAsAdministrator,
         };
 
         try

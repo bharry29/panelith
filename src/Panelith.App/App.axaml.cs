@@ -53,7 +53,7 @@ public sealed partial class App : Application
             crashLog.LogInformation("Moved settings from {From} to {To}.", migratedFrom, paths.Root);
         }
 
-        if (WindowsIntegration.IsSupported && SyncElevation(ref settings, crashLog))
+        if (WindowsIntegration.IsSupported && SyncElevation(settings, crashLog))
         {
             // An elevated copy is taking over; this one has nothing left to do.
             desktop.Shutdown();
@@ -350,24 +350,22 @@ public sealed partial class App : Application
     }
 
     /// <summary>
-    /// Keeps "run as administrator" remembered. When this copy is elevated, it
-    /// notes that down and, if "start with Windows" is already on but only as a
-    /// plain sign-in entry, upgrades it to the scheduled task that starts
-    /// elevated too, so a restart comes back up the same way. When it is not
-    /// elevated but the last run was, it relaunches elevated. Returns true when
-    /// an elevated copy was started and this one should exit without doing
-    /// anything else.
+    /// Applies "always run as administrator". A copy that is not elevated asks
+    /// Windows to relaunch it elevated, every launch; declining just carries on
+    /// without, and the next launch asks again. An elevated copy upgrades a
+    /// plain sign-in entry to the scheduled task that starts elevated, so a
+    /// restart comes back up elevated without a prompt. Returns true when an
+    /// elevated copy was started and this one should exit.
     /// </summary>
-    private bool SyncElevation(ref AppSettings settings, ILogger log)
+    private static bool SyncElevation(AppSettings settings, ILogger log)
     {
+        if (!settings.AlwaysRunAsAdministrator)
+        {
+            return false;
+        }
+
         if (WindowsIntegration.IsElevated)
         {
-            if (!settings.RunElevated)
-            {
-                settings = settings with { RunElevated = true };
-                TrySaveSettings(settings, log);
-            }
-
             var (startupEnabled, startupElevated) = WindowsIntegration.StartupState();
             if (startupEnabled && !startupElevated)
             {
@@ -377,33 +375,19 @@ public sealed partial class App : Application
             return false;
         }
 
-        if (!WindowsIntegration.ShouldRelaunchElevated(isElevated: false, settings.RunElevated))
+        if (!WindowsIntegration.ShouldRelaunchElevated(isElevated: false, settings.AlwaysRunAsAdministrator))
         {
             return false;
         }
 
         if (WindowsIntegration.RelaunchElevated())
         {
-            log.LogInformation("Restarting with administrator rights, remembered from the last run.");
+            log.LogInformation("Restarting with administrator rights.");
             return true;
         }
 
-        log.LogInformation("Administrator rights were declined; Panelith will not ask again until it next runs elevated.");
-        settings = settings with { RunElevated = false };
-        TrySaveSettings(settings, log);
+        log.LogInformation("Administrator rights were declined; running without them this time.");
         return false;
-    }
-
-    private void TrySaveSettings(AppSettings settings, ILogger log)
-    {
-        try
-        {
-            _store!.Save(settings);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            log.LogWarning("Could not save app.json: {Message}", ex.Message);
-        }
     }
 
     private async Task QuitAsync()

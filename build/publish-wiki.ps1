@@ -89,6 +89,9 @@ if ($DryRun) {
 
 Push-Location $work
 try {
+    # git reports line ending changes and progress on stderr, which would
+    # otherwise be a terminating error here even though nothing went wrong.
+    $ErrorActionPreference = 'Continue'
     & git add -A
     & git diff --cached --quiet
     if ($LASTEXITCODE -eq 0) { Write-Host 'The wiki is already up to date.'; return }

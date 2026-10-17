@@ -1,5 +1,6 @@
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Text.Json;
 using Panelith.App.Services;
 
 namespace Panelith.App;
@@ -71,17 +72,23 @@ public sealed class HardeningTests
     }
 
     [Fact]
-    public void RunningElevatedOnceIsRememberedUntilDeclined()
+    public void AsksForAdministratorRightsOnEveryLaunchUntilTurnedOff()
     {
-        // Last run was elevated, this one is not: relaunch elevated.
-        Assert.True(WindowsIntegration.ShouldRelaunchElevated(isElevated: false, rememberedElevated: true));
+        // On by default, including for settings saved before the option existed.
+        Assert.True(new AppSettings().AlwaysRunAsAdministrator);
+        Assert.True(JsonSerializer.Deserialize<AppSettings>("{}", new JsonSerializerOptions(JsonSerializerDefaults.Web))!.AlwaysRunAsAdministrator);
 
-        // Already elevated: nothing to relaunch.
-        Assert.False(WindowsIntegration.ShouldRelaunchElevated(isElevated: true, rememberedElevated: true));
+        Assert.True(WindowsIntegration.ShouldRelaunchElevated(isElevated: false, alwaysRunAsAdministrator: true));
+        Assert.False(WindowsIntegration.ShouldRelaunchElevated(isElevated: true, alwaysRunAsAdministrator: true));
+        Assert.False(WindowsIntegration.ShouldRelaunchElevated(isElevated: false, alwaysRunAsAdministrator: false));
+        Assert.False(WindowsIntegration.ShouldRelaunchElevated(isElevated: true, alwaysRunAsAdministrator: false));
+    }
 
-        // Never asked to be elevated: leave it alone.
-        Assert.False(WindowsIntegration.ShouldRelaunchElevated(isElevated: false, rememberedElevated: false));
-        Assert.False(WindowsIntegration.ShouldRelaunchElevated(isElevated: true, rememberedElevated: false));
+    [Fact]
+    public void ElevatedRelaunchStaysHiddenWhenStartedHidden()
+    {
+        Assert.Equal("--restarted --minimized", WindowsIntegration.RelaunchArguments([WindowsIntegration.MinimizedArgument]));
+        Assert.Equal("--restarted", WindowsIntegration.RelaunchArguments([]));
     }
 
     [Fact]
