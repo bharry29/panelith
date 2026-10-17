@@ -2,11 +2,20 @@
 
 Notable changes to Panelith. Versions follow [Semantic Versioning](https://semver.org/), and each section here becomes the notes of its GitHub release.
 
-## [Unreleased]
+## [0.1.1] - 2026-10-16
 
 ### App
 
 - **Always run as administrator**: once Panelith notices it is running elevated, it remembers that and asks Windows for permission at every later launch, including one opened without **Run as administrator**, until that request is ever declined. If **Start with Windows** is already on, it is upgraded to the elevated scheduled task automatically, so a restart comes back up elevated too.
+
+### Panels
+
+- The Thermalright Trofeo Vision 9.16" (LY) is now marked **verified**: it has been driven end to end on the hardware, rather than only developed against.
+
+### Project
+
+- Pull requests are now built and tested automatically, and checked for dependencies with known vulnerabilities.
+- The app's manifest identified itself by the project's former name; it is now Panelith.
 
 ## [0.1.0] - 2026-10-15
 
@@ -38,4 +47,5 @@ The first public release.
 
 - Panelith is now licensed under the PolyForm Noncommercial License 1.0.0. Earlier, unreleased versions were Apache-2.0.
 
+[0.1.1]: https://github.com/bharry29/panelith/releases/tag/v0.1.1
 [0.1.0]: https://github.com/bharry29/panelith/releases/tag/v0.1.0

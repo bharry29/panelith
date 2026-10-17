@@ -61,7 +61,7 @@ Panelith needs Windows 10 (1809) or Windows 11, 64-bit. Once installed, it updat
 
 | Panel | USB id | Status |
 | --- | --- | --- |
-| Thermalright Trofeo Vision 9.16" and 11.3" | `0416:5408` | Supported |
+| Thermalright Trofeo Vision 9.16" and 11.3" | `0416:5408` | Verified on the 9.16" |
 | Thermalright Trofeo Vision 9.16" (LY1 firmware) | `0416:5409` | Supported, not yet tested on hardware |
 | Thermalright Trofeo Vision 6.86" | `0416:5302` | Supported |
 | Thermalright Frozen Magic, Frozen Vision, Grand Vision, Frozen Warframe | various | Driver included, not yet tested on hardware |

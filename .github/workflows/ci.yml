@@ -1,0 +1,36 @@
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # Warnings are errors, so this fails on anything the local build would catch.
+      - name: Build
+        run: dotnet build Panelith.slnx --configuration Release
+
+      - name: Test
+        run: dotnet test Panelith.slnx --configuration Release
+
+      # The same check build/publish.ps1 makes before it will produce an installer.
+      - name: Check dependencies for known vulnerabilities
+        run: |
+          $audit = dotnet list Panelith.slnx package --vulnerable --include-transitive
+          $audit
+          if ($audit -match 'has the following vulnerable packages') { exit 1 }
+        shell: pwsh

@@ -11,7 +11,7 @@ Every panel model Panelith knows is described by a data file in [`src/Panelith.D
 
 | Panel | USB id | Size | Protocol | Status |
 | --- | --- | --- | --- | --- |
-| Thermalright Trofeo Vision 9.16" / 11.3" (LY) | `0416:5408` | 1920×480 / 1920×400 | Thermalright LY bulk, JPEG | Untested (developed against) |
+| Thermalright Trofeo Vision 9.16" / 11.3" (LY) | `0416:5408` | 1920×480 / 1920×400 | Thermalright LY bulk, JPEG | **Verified** on the 9.16" |
 | Thermalright Trofeo Vision 9.16" (LY1 firmware) | `0416:5409` | 1920×480 | Thermalright LY bulk, JPEG | Untested |
 | Thermalright Trofeo Vision 6.86" | `0416:5302` | 1280×480 | Thermalright HID, JPEG | Community |
 | Thermalright Frozen Magic / Frozen Vision (HID) | `0416:5302` | 320×240 | Thermalright HID | Untested |

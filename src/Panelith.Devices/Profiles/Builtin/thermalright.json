@@ -21,8 +21,8 @@
       "maxFramesPerSecond": 15,
       "requiresExclusiveAccess": true
     },
-    "support": "untested",
-    "notes": "The 9.16\" (1920x480, sometimes reported as 1920x462) and the 11.3\" (1920x400) share this product id; the handshake picks the size. The 6.86\" is a different device (0416:5302) and is not this profile. Close Thermalright TRCC before use."
+    "support": "verified",
+    "notes": "Verified on the 9.16\" (1920x480, sometimes reported as 1920x462); the 11.3\" (1920x400) shares this product id and the handshake picks the size. The 6.86\" is a different device (0416:5302) and is not this profile. Close Thermalright TRCC before use."
   },
   {
     "id": "thermalright.trofeo-vision-ly1",
