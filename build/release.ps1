@@ -41,7 +41,10 @@ $releaseDir = Join-Path $root 'artifacts\release'
 $keys = if ($env:PANELITH_UPDATE_KEYS) { $env:PANELITH_UPDATE_KEYS } else { Join-Path $env:LOCALAPPDATA 'Panelith Release\update-keys' }
 
 function Invoke-Native([string] $what, [scriptblock] $command) {
-    & $command
+    # git and gh report progress on stderr, which PowerShell would otherwise turn
+    # into a terminating error on a perfectly successful command. The exit code is
+    # the only thing here that says whether the command actually worked.
+    & { $ErrorActionPreference = 'Continue'; & $command }
     if ($LASTEXITCODE -ne 0) { throw "$what failed with exit code $LASTEXITCODE." }
 }
 
