@@ -32,7 +32,10 @@ jobs:
         with:
           languages: csharp
           build-mode: manual
-          queries: security-and-quality
+
+          # Security queries only. The quality suite adds several hundred style
+          # findings here, which would bury the alerts that actually matter.
+          queries: security-extended
 
       # Built explicitly rather than by autobuild, so CodeQL sees the same
       # compilation the normal build produces.
