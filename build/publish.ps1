@@ -67,11 +67,6 @@ Write-Host 'No known vulnerable NuGet packages were found.'
 
 Write-Host "Publishing Panelith $Version ($Configuration, $Runtime)"
 if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
-
-# The committed lock files describe a plain, runtime-independent restore, which is
-# what CI checks in locked mode. This publish names a runtime, so it resolves
-# extra runtime assets and would rewrite them; leave them alone instead.
-
 dotnet publish (Join-Path $root 'src\Panelith.App\Panelith.App.csproj') `
     --configuration $Configuration `
     --runtime $Runtime `
@@ -79,8 +74,7 @@ dotnet publish (Join-Path $root 'src\Panelith.App\Panelith.App.csproj') `
     --output $publishDir `
     -p:Version=$Version `
     -p:DebugType=none `
-    -p:GenerateDocumentationFile=false `
-    -p:RestorePackagesWithLockFile=false
+    -p:GenerateDocumentationFile=false
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
 
 # Native packages (SkiaSharp, HarfBuzz) ship debug symbols that would triple the download.

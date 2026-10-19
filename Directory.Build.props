@@ -45,6 +45,14 @@
       after changing a package version.
     -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+    <!--
+      Named so the lock files also cover the runtime-specific restore that
+      build/publish.ps1 does for the self-contained release build. Without it the
+      lock files would describe only a runtime-independent restore, and the
+      release build would have to rewrite them.
+    -->
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <PropertyGroup Label="Determinism">
