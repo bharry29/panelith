@@ -180,6 +180,29 @@ public sealed class PanelProfileRegistryTests
     }
 
     [Fact]
+    public void AnAbsurdlyLargeProfileFileIsSkippedWithoutBeingRead()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "panelith-profiles-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(folder);
+            using (var stream = File.Create(Path.Combine(folder, "huge.json")))
+            {
+                stream.SetLength((1024 * 1024) + 1);
+            }
+
+            var registry = PanelProfileRegistry.Load();
+            registry.LoadDirectory(folder);
+
+            Assert.Contains(registry.Problems, p => p.Contains("far larger", StringComparison.Ordinal));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
     public void KnownUsbIdsCoversEveryMatchableProfile()
     {
         var registry = PanelProfileRegistry.Load();

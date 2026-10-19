@@ -61,6 +61,45 @@ public sealed class InputLimitTests
     }
 
     [Fact]
+    public void GraphsPlottingTooManySeriesAreRefused()
+    {
+        // A widget count alone would not catch this: one graph can name as many
+        // series as the file has room for.
+        var series = string.Join(",", Enumerable.Repeat("""{ "value": "@cpu.load" }""", ThemeSerializer.MaxGraphSeries + 1));
+        var graph = $$"""{ "type": "graph", "x": 0, "y": 0, "width": 10, "height": 10, "series": [{{series}}] }""";
+
+        var ex = Assert.Throws<ThemeFormatException>(() => ThemeSerializer.Deserialize(Document(graph)));
+        Assert.Contains("series", ex.Message);
+    }
+
+    [Fact]
+    public void AGraphWithAReasonableNumberOfSeriesStillLoads()
+    {
+        var series = string.Join(",", Enumerable.Repeat("""{ "value": "@cpu.load" }""", ThemeSerializer.MaxGraphSeries));
+        var graph = $$"""{ "type": "graph", "x": 0, "y": 0, "width": 10, "height": 10, "series": [{{series}}] }""";
+
+        ThemeSerializer.Deserialize(Document(graph));
+    }
+
+    [Fact]
+    public void AnEnormousCanvasIsAnError()
+    {
+        var theme = ThemeSerializer.Deserialize(
+            $$"""{ "schema": 1, "canvas": { "width": {{ThemeValidator.MaxCanvasDimension + 1}}, "height": 100 }, "widgets": [] }""");
+
+        var diagnostics = ThemeValidator.Validate(theme, checkAssets: false);
+        Assert.Contains(diagnostics, d => d.Severity == ThemeDiagnosticSeverity.Error && d.Message.Contains("at most", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ACanvasTheSizeOfARealPanelIsFine()
+    {
+        var theme = ThemeSerializer.Deserialize("""{ "schema": 1, "canvas": { "width": 1920, "height": 480 }, "widgets": [] }""");
+
+        Assert.DoesNotContain(ThemeValidator.Validate(theme, checkAssets: false), d => d.Severity == ThemeDiagnosticSeverity.Error);
+    }
+
+    [Fact]
     public void OversizedThemeFilesAreRefusedBeforeReading()
     {
         var file = Path.Combine(Path.GetTempPath(), "panelith-big-" + Guid.NewGuid().ToString("N") + ".json");

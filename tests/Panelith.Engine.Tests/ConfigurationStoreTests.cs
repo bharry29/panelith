@@ -79,6 +79,26 @@ public sealed class ConfigurationStoreTests : IDisposable
     }
 
     [Fact]
+    public void MovesAnAbsurdlyLargeFileAsideWithoutReadingIt()
+    {
+        // This file is read at every start-up, so its size is checked before any
+        // of it is pulled into memory.
+        var paths = new AppPaths(_root.FullName);
+        paths.EnsureCreated();
+        using (var stream = File.Create(paths.ConfigurationFile))
+        {
+            stream.SetLength(SettingsFile.MaxBytes + 1);
+        }
+
+        var store = new ConfigurationStore(paths);
+        var options = store.Load();
+
+        Assert.Equal(1, options.Version);
+        Assert.Contains(store.Problems, p => p.Contains("far larger", StringComparison.Ordinal));
+        Assert.True(File.Exists(paths.ConfigurationFile + ".broken"));
+    }
+
+    [Fact]
     public void ReportsSettingsThatCannotBeHonoured()
     {
         var options = new PanelithOptions

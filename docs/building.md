@@ -17,6 +17,30 @@ dotnet test Panelith.slnx
 
 Warnings are errors, so a clean build has none.
 
+## Dependencies
+
+Each project has a committed `packages.lock.json` recording the exact version and
+hash of every package it uses, directly or indirectly. CI restores in locked mode,
+which fails if a project asks for anything the lock files do not already describe,
+so a dependency cannot change without a reviewable diff.
+
+Regenerate the lock files and commit them alongside the change whenever a package
+version changes, and whenever the version in `Directory.Build.props` changes,
+since the lock files record project versions too:
+
+```powershell
+dotnet restore Panelith.slnx --force-evaluate
+```
+
+The lock files describe a plain, runtime-independent restore. Release builds name
+a runtime and so resolve extra runtime assets; `build/publish.ps1` leaves the lock
+files untouched rather than rewriting them with runtime-specific entries.
+
+Restore also checks every package against the advisory database and reports
+findings as `NU1901`–`NU1904` warnings. These are warnings rather than errors so
+a new advisory cannot break the build of an already-tagged commit; CI fails on
+them separately, so they still get noticed.
+
 ## Run
 
 ```powershell

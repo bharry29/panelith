@@ -362,8 +362,15 @@ public sealed partial class SettingsViewModel : ObservableObject
         try
         {
             Directory.CreateDirectory(folder);
-            var opener = OperatingSystem.IsWindows() ? "explorer.exe" : OperatingSystem.IsMacOS() ? "open" : "xdg-open";
-            Process.Start(new ProcessStartInfo(opener, $"\"{folder}\"") { UseShellExecute = false });
+            var opener = OperatingSystem.IsWindows()
+                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe")
+                : OperatingSystem.IsMacOS() ? "open" : "xdg-open";
+
+            // ArgumentList quotes the folder itself, so a path containing a quote
+            // cannot turn into a second argument.
+            var start = new ProcessStartInfo(opener) { UseShellExecute = false };
+            start.ArgumentList.Add(folder);
+            Process.Start(start);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception or InvalidOperationException)
         {

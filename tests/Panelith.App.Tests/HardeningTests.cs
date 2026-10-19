@@ -72,6 +72,24 @@ public sealed class HardeningTests
     }
 
     [Fact]
+    public void SchtasksIsRunFromSystem32AndNotFoundOnThePath()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        // Creating the start-up task happens while elevated, so resolving the
+        // program through PATH would hand administrator rights to whatever a
+        // writable entry there contains.
+        var path = WindowsIntegration.SchtasksPath;
+
+        Assert.True(Path.IsPathFullyQualified(path));
+        Assert.Equal(Environment.SystemDirectory, Path.GetDirectoryName(path));
+        Assert.True(File.Exists(path));
+    }
+
+    [Fact]
     public void AsksForAdministratorRightsOnEveryLaunchUntilTurnedOff()
     {
         // On by default, including for settings saved before the option existed.

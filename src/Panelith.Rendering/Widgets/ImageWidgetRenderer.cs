@@ -7,6 +7,13 @@ namespace Panelith.Rendering.Widgets;
 /// <summary>Draws static or binding-selected images, including simple frame animation.</summary>
 internal static class ImageWidgetRenderer
 {
+    /// <summary>
+    /// The most frames an animation may declare. Frame timings are walked on
+    /// every paint, so a shared theme could otherwise ship a small file claiming
+    /// an enormous frame count and spend the render loop counting.
+    /// </summary>
+    private const int MaxAnimationFrames = 1024;
+
     public static void Render(ImageWidget widget, ThemeRect rect, WidgetRenderContext ctx)
     {
         if (rect.IsEmpty || widget.Opacity <= 0d)
@@ -73,7 +80,7 @@ internal static class ImageWidgetRenderer
 
         using var data = SKData.CreateCopy(bytes);
         using var codec = SKCodec.Create(data);
-        if (codec is null || codec.FrameCount <= 1
+        if (codec is null || codec.FrameCount <= 1 || codec.FrameCount > MaxAnimationFrames
             || codec.Info.Width > SkiaImageCodec.MaxImageDimension || codec.Info.Height > SkiaImageCodec.MaxImageDimension)
         {
             return false;

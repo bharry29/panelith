@@ -109,7 +109,14 @@ public sealed class ThemeLibrary
 
         foreach (var root in Roots())
         {
-            var candidate = Path.Combine(root, themeIdOrPath, "theme.json");
+            // An id is a folder name, not a route. Settings and profiles are files
+            // on disk that name screens by id, so a "../.." in one of them must not
+            // turn into a theme loaded from somewhere else entirely.
+            if (!ThemePath.TryResolveInside(root, Path.Combine(themeIdOrPath, "theme.json"), out var candidate))
+            {
+                continue;
+            }
+
             if (File.Exists(candidate))
             {
                 return candidate;

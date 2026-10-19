@@ -52,7 +52,19 @@ public sealed class ConfigurationStore
         PanelithOptions? loaded = null;
         try
         {
-            loaded = JsonSerializer.Deserialize<PanelithOptions>(File.ReadAllText(file), SerializerOptions);
+            // Check the size before reading. This file is read at every start-up,
+            // and one that is damaged or left behind by something else would
+            // otherwise be pulled into memory whole before the parser could object.
+            var length = new FileInfo(file).Length;
+            if (length > SettingsFile.MaxBytes)
+            {
+                problems.Add($"{file} is {length / 1024} KB, far larger than a configuration file should be; the defaults are being used instead.");
+                QuarantineBrokenFile(file, problems);
+            }
+            else
+            {
+                loaded = JsonSerializer.Deserialize<PanelithOptions>(File.ReadAllText(file), SerializerOptions);
+            }
         }
         catch (JsonException ex)
         {
@@ -140,6 +152,10 @@ public sealed class ConfigurationStore
             ReadCommentHandling = JsonCommentHandling.Skip,
             AllowTrailingCommas = true,
             WriteIndented = true,
+
+            // Deeper than any real configuration, and shallow enough that nesting
+            // cannot be used to exhaust the stack.
+            MaxDepth = 64,
         };
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: true));
         return options;

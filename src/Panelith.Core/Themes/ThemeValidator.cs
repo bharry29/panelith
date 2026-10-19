@@ -47,6 +47,13 @@ public readonly record struct ThemeDiagnostic(
 public static class ThemeValidator
 {
     /// <summary>
+    /// The widest or tallest a canvas may be. Panels are a few thousand pixels
+    /// across at most, so this leaves room to design generously while keeping a
+    /// shared theme from asking for a surface nothing could lay out.
+    /// </summary>
+    public const int MaxCanvasDimension = 8192;
+
+    /// <summary>
     /// Validates a theme.
     /// </summary>
     /// <param name="theme">The theme to check.</param>
@@ -122,6 +129,13 @@ public static class ThemeValidator
             diagnostics.Add(new ThemeDiagnostic(
                 ThemeDiagnosticSeverity.Error,
                 $"The canvas must have a positive size but is {theme.Canvas.Width}x{theme.Canvas.Height}.",
+                Path: "canvas"));
+        }
+        else if (theme.Canvas.Width > MaxCanvasDimension || theme.Canvas.Height > MaxCanvasDimension)
+        {
+            diagnostics.Add(new ThemeDiagnostic(
+                ThemeDiagnosticSeverity.Error,
+                $"The canvas is {theme.Canvas.Width}x{theme.Canvas.Height}; it may be at most {MaxCanvasDimension}x{MaxCanvasDimension}.",
                 Path: "canvas"));
         }
 
@@ -587,11 +601,10 @@ public static class ThemeValidator
             return;
         }
 
-        var full = Path.GetFullPath(Path.Combine(theme.BasePath, source));
-
-        // A theme must not reach outside its own folder: themes are shared as
-        // archives and are expected to be self-contained.
-        if (!full.StartsWith(Path.GetFullPath(theme.BasePath), StringComparison.Ordinal))
+        // A theme must not reach outside its own folder: themes are shared and
+        // are expected to be self-contained. This is the same rule the renderer
+        // enforces when it actually reads the file.
+        if (!ThemePath.TryResolveInside(theme.BasePath, source, out var full))
         {
             diagnostics.Add(new ThemeDiagnostic(
                 ThemeDiagnosticSeverity.Error,

@@ -26,6 +26,13 @@ public sealed class PanelProfileRegistry
 {
     private const string BuiltinResourcePrefix = "Panelith.Devices.Profiles.Builtin.";
 
+    /// <summary>
+    /// The largest profile file read. The built-in profiles are a few kilobytes,
+    /// so this is generous; it is here to stop a damaged or oversized file in the
+    /// profiles folder from being read into memory whole at start-up.
+    /// </summary>
+    private const long MaxProfileBytes = 1024 * 1024;
+
     private static readonly JsonSerializerOptions SerializerOptions = CreateSerializerOptions();
 
     private readonly Dictionary<string, PanelProfile> _profiles = new(StringComparer.OrdinalIgnoreCase);
@@ -108,6 +115,13 @@ public sealed class PanelProfileRegistry
         {
             try
             {
+                var length = new FileInfo(file).Length;
+                if (length > MaxProfileBytes)
+                {
+                    Report($"The profile \"{file}\" is {length / 1024} KB, far larger than a profile should be, so it was skipped.");
+                    continue;
+                }
+
                 TryAddDocument(File.ReadAllText(file), file, userDefined: true);
             }
             catch (IOException ex)
@@ -291,6 +305,10 @@ public sealed class PanelProfileRegistry
             AllowTrailingCommas = true,
             WriteIndented = true,
             NumberHandling = JsonNumberHandling.AllowReadingFromString,
+
+            // Deeper than any real profile, and shallow enough that nesting cannot
+            // be used to exhaust the stack.
+            MaxDepth = 64,
         };
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: true));
         return options;

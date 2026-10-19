@@ -24,9 +24,16 @@ Releases are built and published from the maintainer's PC with one script, [`bui
 ## Making a release
 
 1. Bump `VersionPrefix` in [`Directory.Build.props`](../Directory.Build.props).
-2. Add a `## [x.y.z] - YYYY-MM-DD` section to [`CHANGELOG.md`](../CHANGELOG.md). It becomes the release notes.
-3. Commit and push to `main`.
-4. Run:
+2. Regenerate the dependency lock files, because they record the version of each
+   project too:
+
+   ```powershell
+   dotnet restore Panelith.slnx --force-evaluate
+   ```
+
+3. Add a `## [x.y.z] - YYYY-MM-DD` section to [`CHANGELOG.md`](../CHANGELOG.md). It becomes the release notes.
+4. Commit and push to `main`, including the regenerated `packages.lock.json` files.
+5. Run:
 
    ```powershell
    $env:PANELITH_SIGN_THUMBPRINT = '<thumbprint>'

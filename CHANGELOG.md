@@ -2,6 +2,24 @@
 
 Notable changes to Panelith. Versions follow [Semantic Versioning](https://semver.org/), and each section here becomes the notes of its GitHub release.
 
+## [0.1.4] - 2026-10-19
+
+A security hardening release. Nothing here changes how Panelith looks or behaves in normal use.
+
+### Security
+
+- **An update is checked again just before it is installed.** Panelith already refused an update whose signature did not match the key built into it, but the installer then waited in a folder this account can write to until the permission prompt was answered. The signature is now checked again immediately before Panelith asks Windows for permission, and the file is held open against changes and deletion until it starts, so the bytes that were checked are the bytes that run. An update that fails the check is deleted and reported rather than run.
+- **Screens cannot reach outside their own folder.** The check that keeps a screen's images inside its folder compared paths by prefix, so a screen in `rig` could name a file in a sibling folder such as `rig-other`. All three places that resolve a screen's paths now share one rule. Screens named by id in settings or profiles can likewise no longer point somewhere else entirely.
+- **The start-up task is created with the full path to `schtasks.exe`**, so an entry on `PATH` cannot be run with administrator rights instead.
+- **Limits on what a shared screen can ask for**: a cap on canvas size, on how many series one graph may plot, and on the number of animation frames, alongside the existing limits on file size, nesting and widget count.
+- **`panelith.json` and panel profiles have a size limit** and are moved aside if they exceed it, rather than being read into memory whole at start-up.
+
+### Project
+
+- Dependencies are now locked: every project has a committed `packages.lock.json` recording the exact version and hash of each package, so a build cannot quietly resolve to something other than what was reviewed. Restore also checks every package, direct and transitive, against the advisory database.
+- Workflow actions are pinned by commit rather than by tag, CodeQL analysis runs on every push and weekly, and Dependabot watches both packages and actions.
+- `SECURITY.md` now states the known trade-offs, including that `yt-dlp` updates itself and that media is decoded in the app's own process.
+
 ## [0.1.3] - 2026-10-17
 
 ### Fixed
@@ -59,6 +77,7 @@ The first public release.
 
 - Panelith is now licensed under the PolyForm Noncommercial License 1.0.0. Earlier, unreleased versions were Apache-2.0.
 
+[0.1.4]: https://github.com/bharry29/panelith/releases/tag/v0.1.4
 [0.1.3]: https://github.com/bharry29/panelith/releases/tag/v0.1.3
 [0.1.2]: https://github.com/bharry29/panelith/releases/tag/v0.1.2
 [0.1.1]: https://github.com/bharry29/panelith/releases/tag/v0.1.1

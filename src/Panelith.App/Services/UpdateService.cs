@@ -37,6 +37,7 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
     private readonly SparkleUpdater? _sparkle;
     private readonly DispatcherTimer _timer;
     private string? _downloadedInstaller;
+    private AppCastItem? _installingItem;
     private bool _installing;
 
     public UpdateService(AppPaths paths, AppLog log, bool checkAutomatically)
@@ -247,6 +248,7 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
     {
         IsBusy = true;
         _installing = true;
+        _installingItem = item;
         Status = $"Installing Panelith {item.Version}. Panelith closes and opens again when it is done.";
         _logger.LogInformation("Installing update {Version} from {Path}", item.Version, path);
         try
@@ -271,8 +273,34 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
     {
         try
         {
+            // The installer waits in a folder this account can write to, and the
+            // prompt that follows grants administrator rights to whatever the file
+            // holds by then. So hold it open against writers and deletion for as
+            // long as it takes to check the signature and hand it to Windows:
+            // nothing can swap the bytes in between. A file open for reading can
+            // still be run.
+            using var locked = new FileStream(installerPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            VerifyInstaller(installerPath);
+
             var start = new ProcessStartInfo(installerPath, InstallerArguments) { UseShellExecute = true, Verb = "runas" };
             using var process = Process.Start(start) ?? throw new InvalidOperationException("The installer did not start.");
+        }
+        catch (InvalidDataException ex)
+        {
+            // Either the file changed after NetSparkle checked it, or it was never
+            // signed with the key this build trusts. Do not ask for administrator
+            // rights for it, and throw it away so Install downloads a fresh copy.
+            _logger.LogError("The update was not installed because {Reason}.", ex.Message);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                Status = $"The update was not installed because {ex.Message}. Install downloads it again; or get it from the releases page.";
+                _downloadedInstaller = null;
+                _installing = false;
+                IsBusy = false;
+            });
+
+            TryDelete(installerPath);
+            return;
         }
         catch (Win32Exception ex)
         {
@@ -300,6 +328,38 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
 
         _logger.LogInformation("Administrator permission granted; closing Panelith so the update can install.");
         await _sparkle!.QuitApplication();
+    }
+
+    /// <summary>
+    /// Checks the installer against the public key built into Panelith once more,
+    /// immediately before it runs. NetSparkle already checked it when the download
+    /// finished, but that was earlier and elsewhere; this is the check that decides
+    /// whether these exact bytes get administrator rights.
+    /// </summary>
+    /// <exception cref="InvalidDataException">The signature is missing or does not match.</exception>
+    private void VerifyInstaller(string installerPath)
+    {
+        if (_installingItem?.DownloadSignature is not { Length: > 0 } signature)
+        {
+            throw new InvalidDataException("the update did not come with a signature to check");
+        }
+
+        if (_sparkle!.SignatureVerifier.VerifySignatureOfFile(signature, installerPath) != ValidationResult.Valid)
+        {
+            throw new InvalidDataException("its signature does not match the key built into Panelith");
+        }
+    }
+
+    private void TryDelete(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning("Could not delete {Path}: {Message}", path, ex.Message);
+        }
     }
 
     private void OnDownloadFailed(string message)

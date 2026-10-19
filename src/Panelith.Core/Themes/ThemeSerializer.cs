@@ -26,6 +26,9 @@ public static class ThemeSerializer
     /// <summary>How deeply groups may nest.</summary>
     public const int MaxGroupDepth = 16;
 
+    /// <summary>The most series one graph may plot. Every series is evaluated and drawn on each frame.</summary>
+    public const int MaxGraphSeries = 32;
+
     /// <summary>Reads a theme document's text, refusing files too large to be a real theme.</summary>
     /// <exception cref="ThemeFormatException">The file is larger than <see cref="MaxDocumentBytes"/>.</exception>
     public static string ReadDocument(string file)
@@ -136,6 +139,13 @@ public static class ThemeSerializer
             if (++count > MaxWidgets)
             {
                 throw new ThemeFormatException($"The theme has more than {MaxWidgets} widgets.");
+            }
+
+            // The widget count alone would not catch this: one graph can name as
+            // many series as the file has room for, and each is drawn every frame.
+            if (widget is GraphWidget graph && graph.Series.Count > MaxGraphSeries)
+            {
+                throw new ThemeFormatException($"A graph plots more than {MaxGraphSeries} series.");
             }
 
             CheckSize(widget.Children, depth + 1, ref count);

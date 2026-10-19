@@ -1,0 +1,28 @@
+version: 2
+
+updates:
+  # NuGet packages. Lock files are committed, so each update is a reviewable diff
+  # of exact versions and hashes rather than a silent change at restore time.
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: deps
+    groups:
+      avalonia:
+        patterns:
+          - Avalonia*
+      microsoft-extensions:
+        patterns:
+          - Microsoft.Extensions.*
+
+  # Workflow actions are pinned by commit, which means security fixes do not
+  # arrive on their own; this is what notices them.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci

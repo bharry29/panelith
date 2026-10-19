@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Panelith.Imaging;
+using Panelith.Themes;
 using SkiaSharp;
 
 namespace Panelith.Rendering;
@@ -165,17 +166,9 @@ public sealed class ThemeAssetCache : IDisposable
             return false;
         }
 
-        if (Path.IsPathRooted(relativePath) || relativePath.Contains(':', StringComparison.Ordinal))
-        {
-            return false;
-        }
-
         // Normalise, then require the result to sit inside the theme folder, so
         // "..\" and similar tricks cannot reach a sibling folder such as "rig-other".
-        fullPath = Path.GetFullPath(Path.Combine(_themeFolder, relativePath));
-        var root = _themeFolder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        return fullPath.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(fullPath, root, StringComparison.OrdinalIgnoreCase);
+        return ThemePath.TryResolveInside(_themeFolder, relativePath, out fullPath);
     }
 
     private void EvictIfNeeded()

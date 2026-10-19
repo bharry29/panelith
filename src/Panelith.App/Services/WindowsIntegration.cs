@@ -33,6 +33,14 @@ public static class WindowsIntegration
     /// <summary>Whether elevation and start-up registration are available here.</summary>
     public static bool IsSupported => OperatingSystem.IsWindows();
 
+    /// <summary>
+    /// Where <c>schtasks.exe</c> is, by full path rather than by name. Panelith is
+    /// usually elevated when it creates the start-up task, and launching by name
+    /// would resolve through <c>PATH</c>, letting whatever a writable entry there
+    /// happens to contain run with administrator rights instead.
+    /// </summary>
+    internal static string SchtasksPath => Path.Combine(Environment.SystemDirectory, "schtasks.exe");
+
     /// <summary>The official PawnIO site.</summary>
     public const string PawnIOUrl = "https://pawnio.eu/";
 
@@ -424,7 +432,7 @@ public static class WindowsIntegration
     {
         try
         {
-            using var process = Process.Start(new ProcessStartInfo("schtasks.exe", arguments)
+            using var process = Process.Start(new ProcessStartInfo(SchtasksPath, arguments)
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,

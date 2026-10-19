@@ -22,7 +22,29 @@
     <PackageProjectUrl>https://github.com/bharry29/panelith</PackageProjectUrl>
     <RepositoryUrl>https://github.com/bharry29/panelith</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <VersionPrefix>0.1.3</VersionPrefix>
+    <VersionPrefix>0.1.4</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Dependencies">
+    <!--
+      Check every package, direct and transitive, against the advisory database on
+      restore, and report even low-severity findings. These arrive as warnings
+      rather than errors on purpose: a new advisory should not be able to break
+      the build of a tagged commit that compiled fine yesterday. CI fails on them
+      separately, so they still get noticed.
+    -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+
+    <!--
+      Record the exact resolved version and hash of every dependency in a
+      committed packages.lock.json, so a restore cannot quietly pick up something
+      different from what was reviewed. See docs/building.md for how to update it
+      after changing a package version.
+    -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <PropertyGroup Label="Determinism">
