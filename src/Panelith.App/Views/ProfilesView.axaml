@@ -98,7 +98,7 @@
       <ContentControl Content="{Binding Editor}" Margin="0,0,16,28">
         <ContentControl.ContentTemplate>
           <DataTemplate x:DataType="vm:ProfileEditorViewModel">
-            <StackPanel Spacing="16">
+            <StackPanel Spacing="16" MaxWidth="1080" HorizontalAlignment="Left">
 
               <!-- Identity -->
               <Border Classes="card">

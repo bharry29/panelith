@@ -17,7 +17,9 @@
     </DataTemplate>
   </UserControl.Resources>
 
-  <Grid RowDefinitions="Auto,Auto,*" Margin="28,22,28,0">
+  <!-- Capped so the columns stay a readable table. Past this they were
+       stretching apart across the whole monitor. -->
+  <Grid RowDefinitions="Auto,Auto,*" Margin="28,22,28,0" MaxWidth="1180" HorizontalAlignment="Left">
     <DockPanel Grid.Row="0" Margin="0,0,0,16">
       <TextBox DockPanel.Dock="Right" Width="300" PlaceholderText="Filter, e.g. gpu or temp" Text="{Binding Filter}" VerticalAlignment="Center" />
       <StackPanel Spacing="4">

@@ -30,8 +30,10 @@
         </StackPanel>
       </DockPanel>
 
-      <!-- The panel, mirrored -->
-      <Border Classes="card" Padding="20">
+      <!-- The panel, mirrored. Held to about the width of the normal window:
+           the picture keeps the panel's wide shape, so on an ultrawide it
+           would otherwise grow taller than the screen. -->
+      <Border Classes="card" Padding="20" MaxWidth="1320" HorizontalAlignment="Left">
         <StackPanel Spacing="14">
           <DockPanel>
             <Border DockPanel.Dock="Right" Classes="pill" Background="{StaticResource AccentSoftBrush}" IsVisible="{Binding IsLive}">
@@ -49,10 +51,9 @@
             </StackPanel>
           </DockPanel>
 
-          <!-- Bezel -->
           <Border Background="#000000" CornerRadius="18" Padding="12" BorderBrush="#232c38" BorderThickness="1"
-                  BoxShadow="0 18 40 -12 #000000">
-            <c:FrameView Frame="{Binding Mirror}" Radius="8" AspectRatio="4" />
+                  BoxShadow="0 18 40 -12 #000000" HorizontalAlignment="Center">
+            <c:FrameView Frame="{Binding Mirror}" Radius="8" AspectRatio="4" MaxHeight="300" />
           </Border>
         </StackPanel>
       </Border>
@@ -61,12 +62,12 @@
       <ItemsControl ItemsSource="{Binding Tiles}">
         <ItemsControl.ItemsPanel>
           <ItemsPanelTemplate>
-            <UniformGrid Columns="3" />
+            <c:WrappingGrid MinItemWidth="300" MaxItemWidth="420" ColumnSpacing="14" RowSpacing="14" />
           </ItemsPanelTemplate>
         </ItemsControl.ItemsPanel>
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:StatTileViewModel">
-            <Border Classes="card" Margin="0,0,14,14" Padding="18,16">
+            <Border Classes="card" Padding="18,16">
               <Grid RowDefinitions="Auto,Auto,Auto,*">
                 <TextBlock Grid.Row="0" Text="{Binding Title}" Classes="label" />
                 <TextBlock Grid.Row="1" Text="{Binding Value}" Classes="metric" Foreground="{Binding Brush}" Margin="0,6,0,0" />
@@ -103,7 +104,7 @@
                     </Border>
                     <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
                   </DockPanel>
-                  <UniformGrid Columns="4">
+                  <c:WrappingGrid MinItemWidth="150" MaxItemWidth="220" ColumnSpacing="28" RowSpacing="12">
                     <StackPanel Spacing="3">
                       <TextBlock Text="RESOLUTION" Classes="label" />
                       <TextBlock Text="{Binding Resolution}" />
@@ -120,7 +121,7 @@
                       <TextBlock Text="COST PER FRAME" Classes="label" />
                       <TextBlock Text="{Binding Timing}" />
                     </StackPanel>
-                  </UniformGrid>
+                  </c:WrappingGrid>
                   <TextBlock Text="{Binding Problem}" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"
                              IsVisible="{Binding Problem, Converter={x:Static ObjectConverters.IsNotNull}}" />
                 </StackPanel>
