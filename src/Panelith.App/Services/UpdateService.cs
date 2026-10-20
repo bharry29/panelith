@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
@@ -29,6 +30,9 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
 
     /// <summary>Passed to the Inno Setup installer: no wizard, then start Panelith again.</summary>
     internal const string InstallerArguments = "/SILENT /SUPPRESSMSGBOXES /NORESTART /RELAUNCH=1";
+
+    /// <summary>Win32 ERROR_CANCELLED. Windows returns it when the elevation prompt is declined.</summary>
+    private const int ErrorCancelled = 1223;
 
     private static readonly TimeSpan FirstCheckDelay = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan CheckInterval = TimeSpan.FromHours(6);
@@ -271,6 +275,7 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
     /// </summary>
     private async Task LaunchElevatedInstallerAsync(string installerPath)
     {
+        var launchPath = installerPath;
         try
         {
             // The installer waits in a folder this account can write to, and the
@@ -280,9 +285,19 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
             // nothing can swap the bytes in between. A file open for reading can
             // still be run.
             using var locked = new FileStream(installerPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            VerifyInstaller(installerPath);
 
-            var start = new ProcessStartInfo(installerPath, InstallerArguments) { UseShellExecute = true, Verb = "runas" };
+            // NetSparkle names the download with a bare id and no extension.
+            // Asking Windows to run that looks the name up by extension, finds
+            // nothing, and fails — which is not the permission prompt being
+            // declined. A hard link is the same file, so the lock above still
+            // covers the bytes that are about to run.
+            launchPath = ExecutablePath(installerPath);
+            using var launchLock = string.Equals(launchPath, installerPath, StringComparison.OrdinalIgnoreCase)
+                ? null
+                : new FileStream(launchPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            VerifyInstaller(launchPath);
+
+            var start = new ProcessStartInfo(launchPath, InstallerArguments) { UseShellExecute = true, Verb = "runas" };
             using var process = Process.Start(start) ?? throw new InvalidOperationException("The installer did not start.");
         }
         catch (InvalidDataException ex)
@@ -299,13 +314,18 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
                 IsBusy = false;
             });
 
-            TryDelete(installerPath);
+            TryDelete(launchPath);
+            if (!string.Equals(launchPath, installerPath, StringComparison.OrdinalIgnoreCase))
+            {
+                TryDelete(installerPath);
+            }
+
             return;
         }
-        catch (Win32Exception ex)
+        catch (Win32Exception ex) when (ex.NativeErrorCode == ErrorCancelled)
         {
-            // ERROR_CANCELLED: Windows' own prompt, declined. Panelith keeps running; the next Install tries again.
-            _logger.LogInformation("Installing the update needs administrator permission, which was not given: {Message}", ex.Message);
+            // Windows' own prompt, declined. Panelith keeps running; the next Install tries again.
+            _logger.LogInformation("Installing the update needs administrator permission, which was not given.");
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 Status = "Installing needs administrator permission, which was not given. Try Install again.";
@@ -349,6 +369,42 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
             throw new InvalidDataException("its signature does not match the key built into Panelith");
         }
     }
+
+    /// <summary>
+    /// A path Windows will agree to run. A download that already ends in
+    /// <c>.exe</c> is used as it is. Otherwise a hard link with that extension
+    /// is added beside it, falling back to a copy when a link cannot be made.
+    /// </summary>
+    internal static string ExecutablePath(string installerPath)
+    {
+        if (installerPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+        {
+            return installerPath;
+        }
+
+        var exePath = installerPath + ".exe";
+        try
+        {
+            File.Delete(exePath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // A previous attempt may still be running. A new name avoids it.
+            exePath = installerPath + "-" + Guid.NewGuid().ToString("N") + ".exe";
+        }
+
+        if (OperatingSystem.IsWindows() && CreateHardLink(exePath, installerPath, IntPtr.Zero))
+        {
+            return exePath;
+        }
+
+        File.Copy(installerPath, exePath, overwrite: true);
+        return exePath;
+    }
+
+    [LibraryImport("kernel32.dll", EntryPoint = "CreateHardLinkW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool CreateHardLink(string fileName, string existingFileName, IntPtr securityAttributes);
 
     private void TryDelete(string path)
     {
